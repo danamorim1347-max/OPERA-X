@@ -1,0 +1,1362 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Coletor Cloud | Registro de Validades</title>
+    
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        /* (manter todo o CSS existente) */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background: #f3f4f6;
+            color: #111827;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            pointer-events: none;
+        }
+
+        .toast {
+            background: white;
+            border-radius: 12px;
+            padding: 16px 20px;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 300px;
+            max-width: 400px;
+            animation: slideIn 0.3s ease forwards;
+            border-left: 4px solid;
+            pointer-events: auto;
+        }
+
+        .toast.success { border-left-color: #10b981; }
+        .toast.error { border-left-color: #ef4444; }
+        .toast.warning { border-left-color: #f59e0b; }
+        .toast.info { border-left-color: #3b82f6; }
+
+        .toast-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+
+        .toast.success .toast-icon { background: #10b981; color: white; }
+        .toast.error .toast-icon { background: #ef4444; color: white; }
+        .toast.warning .toast-icon { background: #f59e0b; color: white; }
+        .toast.info .toast-icon { background: #3b82f6; color: white; }
+
+        .toast-content {
+            flex: 1;
+            font-size: 0.95rem;
+            font-weight: 500;
+            color: #1f2937;
+        }
+
+        .toast-close {
+            color: #9ca3af;
+            cursor: pointer;
+            font-size: 18px;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        @keyframes slideOut {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+
+        .toast.fade-out {
+            animation: slideOut 0.3s ease forwards;
+        }
+
+        .header {
+            background: white;
+            border-radius: 24px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 1.4rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .connection-status {
+            font-size: 0.8rem;
+            margin-top: 8px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            display: inline-block;
+        }
+
+        .connection-status.online {
+            background: #d1fae5;
+            color: #10b981;
+        }
+
+        .connection-status.offline {
+            background: #fee2e2;
+            color: #ef4444;
+        }
+
+        .connection-status.checking {
+            background: #fef3c7;
+            color: #f59e0b;
+        }
+
+        .upload-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .upload-tab {
+            flex: 1;
+            padding: 14px;
+            text-align: center;
+            background: white;
+            border-radius: 16px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: #6b7280;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid #e5e7eb;
+        }
+
+        .upload-tab.active {
+            background: #4f46e5;
+            color: white;
+            border-color: #4f46e5;
+        }
+
+        .upload-card {
+            background: white;
+            border-radius: 24px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+        }
+
+        .upload-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+            color: #111827;
+        }
+
+        .modo-importacao {
+            background: #f9fafb;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .modo-importacao label {
+            display: block;
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .modo-importacao label:hover {
+            background: #f3f4f6;
+        }
+
+        .modo-importacao input[type="radio"] {
+            margin-right: 10px;
+        }
+
+        .modo-importacao .modo-descricao {
+            font-size: 0.85rem;
+            color: #6b7280;
+            margin-left: 28px;
+            margin-top: 5px;
+        }
+
+        .upload-area {
+            border: 2px dashed #e5e7eb;
+            border-radius: 20px;
+            padding: 30px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 20px;
+        }
+
+        .upload-area:hover {
+            border-color: #4f46e5;
+            background: #f5f3ff;
+        }
+
+        .upload-area i {
+            font-size: 2.5rem;
+            display: block;
+            margin-bottom: 10px;
+            color: #4f46e5;
+        }
+
+        .upload-area span {
+            font-weight: 600;
+            color: #4f46e5;
+        }
+
+        .upload-area small {
+            display: block;
+            color: #6b7280;
+            font-size: 0.8rem;
+            margin-top: 8px;
+        }
+
+        .search-box {
+            background: white;
+            border-radius: 20px;
+            padding: 15px;
+            margin-bottom: 20px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .search-label {
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #374151;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        .input-group input {
+            flex: 1;
+            padding: 14px 16px;
+            border: 1px solid #e5e7eb;
+            border-radius: 14px;
+            font-size: 1rem;
+            outline: none;
+        }
+
+        .input-group input:focus {
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        .btn-search {
+            background: #111827;
+            color: white;
+            border: none;
+            padding: 0 20px;
+            border-radius: 14px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .btn-search:hover {
+            background: #1f2937;
+        }
+
+        .btn-scanner {
+            background: #4f46e5;
+            color: white;
+            border: none;
+            padding: 0 20px;
+            border-radius: 14px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .btn-scanner:hover {
+            background: #4338ca;
+        }
+
+        #reader {
+            width: 100%;
+            border-radius: 20px;
+            overflow: hidden;
+            margin-bottom: 20px;
+            display: none;
+            background: white;
+            padding: 10px;
+        }
+
+        .status-bar {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .status-card {
+            background: white;
+            border-radius: 16px;
+            padding: 15px;
+            text-align: center;
+            border: 1px solid #e5e7eb;
+        }
+
+        .status-card b {
+            display: block;
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: #111827;
+        }
+
+        .status-card small {
+            color: #6b7280;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .filter-info {
+            background: white;
+            border-radius: 12px;
+            padding: 12px 16px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .filter-info span {
+            font-weight: 600;
+            color: #4f46e5;
+        }
+
+        .produtos-list {
+            margin-bottom: 20px;
+        }
+
+        .list-title {
+            font-weight: 700;
+            margin-bottom: 15px;
+            color: #374151;
+        }
+
+        .produto-item {
+            background: white;
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 10px;
+            border: 1px solid #e5e7eb;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-left: 4px solid;
+        }
+
+        .produto-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+        }
+
+        .produto-item.pendente {
+            border-left-color: #f59e0b;
+            background: #fffbeb;
+        }
+
+        .produto-item.concluido {
+            border-left-color: #10b981;
+            opacity: 0.7;
+            background: #f0fdf4;
+        }
+
+        .produto-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .produto-codigo {
+            font-weight: 800;
+            font-size: 1rem;
+        }
+
+        .produto-status {
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 30px;
+        }
+
+        .status-pendente {
+            background: #fef3c7;
+            color: #f59e0b;
+        }
+
+        .status-concluido {
+            background: #d1fae5;
+            color: #10b981;
+        }
+
+        .produto-desc {
+            font-size: 0.9rem;
+            color: #4b5563;
+            margin-bottom: 12px;
+        }
+
+        .produto-detalhes {
+            display: flex;
+            gap: 15px;
+            font-size: 0.8rem;
+            color: #6b7280;
+            margin-bottom: 10px;
+        }
+
+        .produto-endereco {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.8rem;
+            color: #4f46e5;
+            font-weight: 600;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 32px;
+            width: 90%;
+            max-width: 400px;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 30px;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-header h2 {
+            font-size: 1.3rem;
+            font-weight: 800;
+        }
+
+        .modal-close {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: #f3f4f6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        .modal-info {
+            background: #f9fafb;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .modal-info p {
+            margin: 8px 0;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .modal-input {
+            width: 100%;
+            padding: 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 16px;
+            font-size: 1.5rem;
+            text-align: center;
+            font-weight: 600;
+            margin: 10px 0;
+            outline: none;
+        }
+
+        .modal-input:focus {
+            border-color: #4f46e5;
+        }
+
+        .btn-salvar {
+            width: 100%;
+            padding: 16px;
+            background: #10b981;
+            color: white;
+            border: none;
+            border-radius: 16px;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            margin: 10px 0;
+        }
+
+        .btn-salvar:hover {
+            background: #059669;
+        }
+
+        .btn-cancelar {
+            width: 100%;
+            padding: 16px;
+            background: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 16px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .btn-cancelar:hover {
+            background: #dc2626;
+        }
+
+        .lotes-list {
+            margin: 20px 0;
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+        }
+
+        .lote-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .lote-item:last-child {
+            border-bottom: none;
+        }
+
+        .lote-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .lote-validade {
+            font-weight: 700;
+            color: #10b981;
+        }
+
+        .lote-qtd {
+            font-size: 0.8rem;
+            color: #6b7280;
+        }
+
+        .btn-remover {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 0.7rem;
+            cursor: pointer;
+        }
+
+        .btn-remover:hover {
+            background: #dc2626;
+        }
+
+        .dica-enter {
+            font-size: 0.75rem;
+            color: #6b7280;
+            margin-top: 4px;
+            text-align: center;
+        }
+
+        @media (max-width: 480px) {
+            .container { padding: 15px; }
+            .input-group { flex-wrap: wrap; }
+            .btn-search, .btn-scanner { width: 100%; padding: 14px; }
+            .toast { min-width: 250px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<div class="container">
+    <div class="header">
+        <h1>📦 Coletor Cloud</h1>
+        <div id="connectionStatus" class="connection-status checking">🔄 Conectando...</div>
+    </div>
+
+    <div class="upload-tabs">
+        <div class="upload-tab active" onclick="mudarAba('xml')">📄 XML</div>
+        <div class="upload-tab" onclick="mudarAba('estoque')">📦 PLANILHA</div>
+    </div>
+
+    <div id="aba-xml">
+        <div class="upload-card">
+            <div class="upload-title">📄 Importar XML</div>
+            <label class="upload-area">
+                <div>📂</div>
+                <span>SELECIONAR MÚLTIPLOS XMLs</span>
+                <small>Clique para escolher os arquivos</small>
+                <input type="file" id="xmlInput" multiple accept=".xml" style="display:none">
+            </label>
+        </div>
+    </div>
+
+    <div id="aba-estoque" style="display: none;">
+        <div class="upload-card">
+            <div class="upload-title">📊 Importar Planilha</div>
+            
+            <div class="modo-importacao">
+                <label>
+                    <input type="radio" name="modoImportacao" value="cadastro" checked>
+                    <strong>📝 Modo Cadastro Inicial</strong>
+                    <div class="modo-descricao">
+                        Cria novos produtos no sistema. Use apenas na primeira vez.
+                    </div>
+                </label>
+                <label>
+                    <input type="radio" name="modoImportacao" value="atualizacao">
+                    <strong>🔄 Modo Atualização de Quantidades</strong>
+                    <div class="modo-descricao">
+                        Atualiza apenas as quantidades dos produtos existentes.
+                    </div>
+                </label>
+            </div>
+
+            <label class="upload-area">
+                <div>📊</div>
+                <span>CARREGAR PLANILHA</span>
+                <small>Clique para escolher o arquivo</small>
+                <input type="file" id="estoqueInput" accept=".xlsx,.xls,.csv" style="display:none">
+            </label>
+            <div id="estoque-status" style="font-size:0.85rem; color:#10b981; text-align:center;"></div>
+        </div>
+    </div>
+
+    <div id="reader"></div>
+
+    <div class="search-box">
+        <div class="search-label">🔍 Buscar produto</div>
+        <div class="input-group">
+            <input type="tel" id="manualCode" placeholder="Código ou EAN..." inputmode="numeric">
+            <button class="btn-search" onclick="buscarManual()">BUSCAR</button>
+            <button class="btn-scanner" onclick="alternarScanner()">📷</button>
+        </div>
+        <div class="dica-enter">Digite o código e pressione ENTER</div>
+    </div>
+
+    <div class="status-bar">
+        <div class="status-card">
+            <b><span id="stat-lotes">0</span></b>
+            <small>LOTES</small>
+        </div>
+        <div class="status-card">
+            <b><span id="stat-pendentes">0</span></b>
+            <small>PENDENTES</small>
+        </div>
+    </div>
+
+    <div class="filter-info">
+        <span>📌</span>
+        <span id="filterText">Mostrando: TODOS OS PRODUTOS</span>
+    </div>
+
+    <div class="produtos-list">
+        <div class="list-title">📋 Produtos</div>
+        <div id="lista-estoque"></div>
+    </div>
+</div>
+
+<div class="modal" id="modalData">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="prodNome">Carregando...</h2>
+            <div class="modal-close" onclick="fecharModal()">×</div>
+        </div>
+
+        <div class="modal-info" id="modalInfo"></div>
+
+        <div id="lotesContainer">
+            <div style="font-weight:600; margin-bottom:10px;">📦 Lotes com validade:</div>
+            <div id="lotesList" class="lotes-list"></div>
+        </div>
+
+        <div id="inputContainer"></div>
+
+        <button class="btn-cancelar" onclick="fecharModal()">FECHAR</button>
+    </div>
+</div>
+
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyDr8Q2oJJ46ZANAjnV0_iSokdHnZ-YqGP4",
+        authDomain: "controle-validade-de623.firebaseapp.com",
+        databaseURL: "https://controle-validade-de623-default-rtdb.firebaseio.com",
+        projectId: "controle-validade-de623",
+        storageBucket: "controle-validade-de623.appspot.com",
+        messagingSenderId: "788364390731",
+        appId: "1:788364390731:web:6c92c01576a3c64ed7b8ce"
+    };
+
+    let database;
+    let estoqueRef;
+    let inventario = {};
+    let scanner = null;
+    let refCodigoGlobal = null;
+    let abaAtual = 'xml';
+
+    function autenticarAnonimo() {
+        return firebase.auth().signInAnonymously()
+            .then(() => {
+                console.log('✅ Autenticado anonimamente');
+                mostrarToast('Conectado ao banco de dados', 'success');
+            })
+            .catch((error) => {
+                console.error('❌ Erro na autenticação:', error);
+                mostrarToast('Erro ao autenticar', 'error');
+                throw error;
+            });
+    }
+
+    function inicializarFirebase() {
+        try {
+            if (!firebase.apps.length) {
+                firebase.initializeApp(firebaseConfig);
+                console.log('Firebase inicializado');
+            }
+            
+            database = firebase.database();
+            
+            firebase.auth().onAuthStateChanged((user) => {
+                if (user) {
+                    console.log('Usuário autenticado:', user.uid);
+                    estoqueRef = database.ref('estoque');
+                    
+                    const connectedRef = database.ref('.info/connected');
+                    connectedRef.on('value', (snap) => {
+                        const statusEl = document.getElementById('connectionStatus');
+                        if (snap.val() === true) {
+                            statusEl.className = 'connection-status online';
+                            statusEl.innerHTML = '✅ Conectado e autenticado';
+                            carregarDados();
+                        } else {
+                            statusEl.className = 'connection-status offline';
+                            statusEl.innerHTML = '❌ Desconectado';
+                        }
+                    });
+                } else {
+                    console.log('Usuário não autenticado, tentando login anônimo...');
+                    autenticarAnonimo();
+                }
+            });
+            
+        } catch (error) {
+            console.error('Erro ao inicializar Firebase:', error);
+            document.getElementById('connectionStatus').className = 'connection-status offline';
+            document.getElementById('connectionStatus').innerHTML = '❌ Erro de conexão';
+            mostrarToast('Erro ao conectar com o banco de dados', 'error');
+        }
+    }
+
+    function carregarDados() {
+        estoqueRef.on('value', (snapshot) => {
+            inventario = snapshot.val() || {};
+            console.log('Dados carregados:', Object.keys(inventario).length, 'itens');
+            atualizarStatus();
+            renderizarLista();
+        }, (error) => {
+            console.error('Erro ao carregar dados:', error);
+            mostrarToast('Erro ao carregar dados', 'error');
+        });
+    }
+
+    window.addEventListener('load', inicializarFirebase);
+
+    // Função para mostrar toast
+    window.mostrarToast = (mensagem, tipo = 'success') => {
+        const container = document.getElementById('toastContainer');
+        const toastId = 'toast_' + Date.now() + '_' + Math.random();
+        
+        const icons = {
+            success: '✓',
+            error: '✗',
+            warning: '⚠',
+            info: 'ℹ'
+        };
+        
+        const toast = document.createElement('div');
+        toast.className = `toast ${tipo}`;
+        toast.id = toastId;
+        toast.innerHTML = `
+            <div class="toast-icon">${icons[tipo]}</div>
+            <div class="toast-content">${mensagem}</div>
+            <div class="toast-close" onclick="fecharToast('${toastId}')">×</div>
+        `;
+        
+        container.appendChild(toast);
+        
+        setTimeout(() => {
+            const toastElement = document.getElementById(toastId);
+            if (toastElement) {
+                toastElement.classList.add('fade-out');
+                setTimeout(() => {
+                    if (toastElement.parentNode) {
+                        toastElement.remove();
+                    }
+                }, 300);
+            }
+        }, 3000);
+    };
+
+    window.fecharToast = (id) => {
+        const toast = document.getElementById(id);
+        if (toast) {
+            toast.classList.add('fade-out');
+            setTimeout(() => {
+                if (toast.parentNode) {
+                    toast.remove();
+                }
+            }, 300);
+        }
+    };
+
+    // Abas
+    window.mudarAba = (aba) => {
+        abaAtual = aba;
+        document.querySelectorAll('.upload-tab').forEach(tab => tab.classList.remove('active'));
+        document.getElementById('aba-xml').style.display = 'none';
+        document.getElementById('aba-estoque').style.display = 'none';
+        
+        if (aba === 'xml') {
+            document.querySelectorAll('.upload-tab')[0].classList.add('active');
+            document.getElementById('aba-xml').style.display = 'block';
+            document.getElementById('filterText').innerText = 'Mostrando: APENAS PRODUTOS DE XML';
+        } else {
+            document.querySelectorAll('.upload-tab')[1].classList.add('active');
+            document.getElementById('aba-estoque').style.display = 'block';
+            document.getElementById('filterText').innerText = 'Mostrando: APENAS PRODUTOS DA PLANILHA';
+        }
+        
+        renderizarLista();
+    };
+
+    // Upload XML
+    document.getElementById('xmlInput').addEventListener('change', async (e) => {
+        if (!estoqueRef) {
+            mostrarToast('Banco de dados não conectado', 'error');
+            return;
+        }
+
+        const files = Array.from(e.target.files);
+        let total = 0;
+        let updates = {};
+
+        for (let file of files) {
+            try {
+                const text = await file.text();
+                const parser = new DOMParser();
+                const xml = parser.parseFromString(text, "text/xml");
+                
+                const nNF = xml.querySelector('nNF')?.textContent || 'S/N';
+                const itens = xml.querySelectorAll('det');
+
+                for (let item of itens) {
+                    const prod = item.querySelector('prod');
+                    if (!prod) continue;
+                    
+                    const codigo = prod.querySelector('cProd')?.textContent?.trim() || '';
+                    const desc = prod.querySelector('xProd')?.textContent?.trim() || '';
+                    
+                    let qtde = 0;
+                    const qCom = prod.querySelector('qCom')?.textContent;
+                    if (qCom) qtde = parseFloat(qCom.replace(',', '.'));
+                    
+                    if (!qtde) {
+                        const qTrib = prod.querySelector('qTrib')?.textContent;
+                        if (qTrib) qtde = parseFloat(qTrib.replace(',', '.'));
+                    }
+                    
+                    if (qtde <= 0) continue;
+
+                    const id = `XML_${nNF}_${codigo}_${Date.now()}_${total}`.replace(/[.#$\[\]\/]/g, "_");
+                    
+                    updates[`${id}`] = {
+                        nf: nNF,
+                        codigo: codigo,
+                        desc: desc,
+                        qtde: qtde,
+                        validade: '',
+                        done: false,
+                        origem: 'xml'
+                    };
+                    total++;
+                }
+            } catch (error) {
+                console.error(error);
+                mostrarToast(`Erro no arquivo ${file.name}`, 'error');
+            }
+        }
+        
+        if (total > 0) {
+            await estoqueRef.update(updates);
+            mostrarToast(`${total} itens importados dos XMLs!`, 'success');
+        }
+        
+        e.target.value = '';
+    });
+
+    // Upload Planilha
+    document.getElementById('estoqueInput').addEventListener('change', async (e) => {
+        if (!estoqueRef) {
+            mostrarToast('Banco de dados não conectado', 'error');
+            return;
+        }
+
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const modoCadastro = document.querySelector('input[name="modoImportacao"]:checked').value;
+        
+        const statusDiv = document.getElementById('estoque-status');
+        statusDiv.innerHTML = 'Processando...';
+        
+        try {
+            const data = await file.arrayBuffer();
+            const workbook = XLSX.read(data);
+            const sheet = workbook.Sheets[workbook.SheetNames[0]];
+            const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+            
+            let criados = 0;
+            let atualizados = 0;
+            let ignorados = 0;
+            let updates = {};
+
+            const produtosExistentes = {};
+            Object.entries(inventario).forEach(([id, item]) => {
+                if (!produtosExistentes[item.codigo]) {
+                    produtosExistentes[item.codigo] = [];
+                }
+                produtosExistentes[item.codigo].push({ id, ...item });
+            });
+
+            for (let i = 1; i < rows.length; i++) {
+                const row = rows[i];
+                if (!row || row.length < 11) continue;
+                
+                const codigo = String(row[0] || '').trim();
+                const desc = String(row[1] || '').trim();
+                const qtde = parseFloat(String(row[8] || '0').replace(',', '.')) || 0;
+                
+                const endereco = [row[4], row[5], row[6], row[7]]
+                    .filter(c => c && String(c).trim())
+                    .map(c => String(c).trim())
+                    .join(' • ');
+                
+                if (!codigo || !desc) continue;
+
+                if (modoCadastro === 'cadastro') {
+                    const id = `ESTOQUE_${codigo}_${Date.now()}_${i}`.replace(/[.#$\[\]\/]/g, "_");
+                    
+                    updates[`${id}`] = {
+                        nf: 'ESTOQUE',
+                        codigo: codigo,
+                        desc: desc,
+                        qtde: qtde,
+                        endereco: endereco,
+                        validade: '',
+                        done: false,
+                        origem: 'estoque'
+                    };
+                    criados++;
+                    
+                } else {
+                    if (produtosExistentes[codigo]) {
+                        const lotesDoProduto = produtosExistentes[codigo];
+                        const quantidadeTotal = lotesDoProduto.reduce((sum, lote) => sum + (lote.qtde || 0), 0);
+                        
+                        if (quantidadeTotal !== qtde) {
+                            const primeiroLote = lotesDoProduto[0];
+                            updates[`${primeiroLote.id}/qtde`] = qtde;
+                            atualizados++;
+                        } else {
+                            ignorados++;
+                        }
+                    } else {
+                        ignorados++;
+                    }
+                }
+            }
+            
+            if (Object.keys(updates).length > 0) {
+                await estoqueRef.update(updates);
+                
+                if (modoCadastro === 'cadastro') {
+                    statusDiv.innerHTML = `✅ ${criados} produtos cadastrados!`;
+                    mostrarToast(`${criados} produtos cadastrados!`, 'success');
+                } else {
+                    statusDiv.innerHTML = `✅ ${atualizados} atualizados, ${ignorados} ignorados`;
+                    mostrarToast(`${atualizados} produtos tiveram quantidades atualizadas`, 'success');
+                }
+            } else {
+                if (modoCadastro === 'atualizacao') {
+                    statusDiv.innerHTML = '⚠️ Todas as quantidades já estão atualizadas';
+                    mostrarToast('Nenhuma atualização necessária', 'info');
+                } else {
+                    statusDiv.innerHTML = '⚠️ Nenhum produto novo';
+                    mostrarToast('Nenhum produto novo encontrado', 'warning');
+                }
+            }
+            
+        } catch (error) {
+            console.error(error);
+            statusDiv.innerHTML = '❌ Erro ao processar';
+            mostrarToast('Erro ao processar planilha', 'error');
+        }
+        e.target.value = '';
+    });
+
+    // Busca
+    window.buscarManual = () => {
+        const termo = document.getElementById('manualCode').value.trim();
+        if (termo) {
+            abrirModal(termo);
+        } else {
+            mostrarToast('Digite um código para buscar', 'warning');
+        }
+    };
+
+    // Scanner
+    window.alternarScanner = () => {
+        const r = document.getElementById('reader');
+        if (r.style.display === 'none' || r.style.display === '') {
+            r.style.display = 'block';
+            if (!scanner) {
+                scanner = new Html5Qrcode("reader");
+                scanner.start(
+                    { facingMode: "environment" }, 
+                    { fps: 10, qrbox: 250 },
+                    (text) => {
+                        let clean = text.replace(/^\]d2/, "").trim();
+                        scanner.stop();
+                        r.style.display = 'none';
+                        scanner = null;
+                        abrirModal(clean);
+                    },
+                    (error) => console.warn(error)
+                );
+            }
+        } else {
+            r.style.display = 'none';
+            if (scanner) {
+                scanner.stop();
+                scanner = null;
+            }
+        }
+    };
+
+    document.getElementById('manualCode').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') buscarManual();
+    });
+
+    // Modal
+    window.abrirModal = (codigo) => {
+        const lotes = Object.values(inventario).filter(i => i.codigo === codigo);
+        if (lotes.length === 0) {
+            mostrarToast('Produto não encontrado', 'error');
+            return;
+        }
+
+        refCodigoGlobal = codigo;
+        
+        const comValidade = lotes.filter(l => l.done && l.validade);
+        const pendentes = lotes.filter(l => !l.done);
+        const totalPendente = pendentes.reduce((acc, l) => acc + (l.qtde || 0), 0);
+        const primeiroLote = lotes[0];
+
+        document.getElementById('prodNome').innerText = primeiroLote.desc || "Sem descrição";
+        
+        document.getElementById('modalInfo').innerHTML = `
+            <p><strong>Código:</strong> ${codigo}</p>
+            <p><strong>Origem:</strong> ${primeiroLote.origem === 'xml' ? '📄 XML' : '📦 Planilha'}</p>
+            ${primeiroLote.endereco ? `<p><strong>Endereço:</strong> ${primeiroLote.endereco}</p>` : ''}
+            <p><strong>Total unidades:</strong> ${lotes.reduce((acc, l) => acc + (l.qtde || 0), 0)}</p>
+        `;
+
+        const lotesPorValidade = new Map();
+        comValidade.forEach(l => {
+            const key = l.validade;
+            if (!lotesPorValidade.has(key)) {
+                lotesPorValidade.set(key, {
+                    validade: key,
+                    qtde: 0,
+                    ids: []
+                });
+            }
+            const grupo = lotesPorValidade.get(key);
+            grupo.qtde += l.qtde || 0;
+            grupo.ids.push(Object.keys(inventario).find(k => inventario[k] === l));
+        });
+
+        const lotesList = document.getElementById('lotesList');
+        if (comValidade.length > 0) {
+            lotesList.innerHTML = Array.from(lotesPorValidade.values()).map(grupo => `
+                <div class="lote-item">
+                    <div class="lote-info">
+                        <span class="lote-validade">📅 ${grupo.validade}</span>
+                        <span class="lote-qtd">${grupo.qtde} unidades</span>
+                    </div>
+                    <button class="btn-remover" onclick="removerLotes('${grupo.ids.join(',')}')">✕</button>
+                </div>
+            `).join('');
+        } else {
+            lotesList.innerHTML = '<div style="text-align:center; padding:15px;">Nenhum lote com validade</div>';
+        }
+
+        document.getElementById('inputContainer').innerHTML = `
+            <div style="margin: 15px 0;">
+                <label style="display: block; text-align: left; font-weight: 600; margin-bottom: 5px;">
+                    📦 Quantidade (disponível: ${totalPendente}):
+                </label>
+                <input type="number" id="inputQuantidade" class="modal-input" 
+                       placeholder="Quantidade" min="1" max="${totalPendente}" value="${totalPendente}">
+            </div>
+            <div style="margin: 15px 0;">
+                <label style="display: block; text-align: left; font-weight: 600; margin-bottom: 5px;">
+                    📅 Data de validade (MM/AAAA):
+                </label>
+                <input type="text" id="inputMesAno" class="modal-input" placeholder="MM/AAAA" maxlength="7">
+            </div>
+            <div class="dica-enter">Digite a data e pressione ENTER</div>
+            <button class="btn-salvar" onclick="salvarData()">ADICIONAR VALIDADE</button>
+        `;
+
+        document.getElementById('modalData').style.display = 'flex';
+        document.getElementById('inputQuantidade').focus();
+    };
+
+    window.salvarData = async () => {
+        if (!estoqueRef) {
+            mostrarToast('Banco de dados não conectado', 'error');
+            return;
+        }
+
+        const quantidade = parseInt(document.getElementById('inputQuantidade')?.value);
+        const data = document.getElementById('inputMesAno').value;
+        
+        if (!quantidade || quantidade <= 0) {
+            mostrarToast('Digite uma quantidade válida', 'warning');
+            return;
+        }
+        
+        if (data.length < 7) {
+            mostrarToast('Digite MM/AAAA', 'warning');
+            return;
+        }
+        
+        if (!/^\d{2}\/\d{4}$/.test(data)) {
+            mostrarToast('Formato inválido. Use MM/AAAA', 'warning');
+            return;
+        }
+
+        const dataSalvar = "01/" + data;
+        
+        const itensPendentes = Object.entries(inventario)
+            .filter(([_, item]) => item.codigo === refCodigoGlobal && !item.done);
+
+        if (itensPendentes.length === 0) {
+            mostrarToast('Todos os lotes já têm validade', 'info');
+            fecharModal();
+            return;
+        }
+
+        const totalPendente = itensPendentes.reduce((acc, [_, item]) => acc + (item.qtde || 0), 0);
+        
+        if (quantidade > totalPendente) {
+            mostrarToast(`Quantidade indisponível. Total pendente: ${totalPendente}`, 'warning');
+            return;
+        }
+
+        let updates = {};
+        let quantidadeRestante = quantidade;
+
+        for (let [id, item] of itensPendentes) {
+            if (quantidadeRestante <= 0) break;
+            
+            const qtdDisponivel = item.qtde || 0;
+            
+            if (qtdDisponivel <= quantidadeRestante) {
+                const novoId = `${id}_VAL_${Date.now()}`;
+                updates[`${novoId}`] = {
+                    ...item,
+                    validade: dataSalvar,
+                    done: true,
+                    qtde: qtdDisponivel
+                };
+                updates[`${id}`] = null;
+                quantidadeRestante -= qtdDisponivel;
+            } else {
+                const novoId = `${id}_VAL_${Date.now()}`;
+                updates[`${novoId}`] = {
+                    ...item,
+                    validade: dataSalvar,
+                    done: true,
+                    qtde: quantidadeRestante
+                };
+                
+                updates[`${id}`] = {
+                    ...item,
+                    qtde: qtdDisponivel - quantidadeRestante
+                };
+                
+                quantidadeRestante = 0;
+            }
+        }
+
+        await estoqueRef.update(updates);
+        mostrarToast(`${quantidade} unidades com validade ${data} adicionadas!`, 'success');
+        fecharModal();
+    };
+
+    window.removerLotes = async (idsString) => {
+        if (!estoqueRef) {
+            mostrarToast('Banco de dados não conectado', 'error');
+            return;
+        }
+
+        if (!confirm('Remover estes lotes?')) return;
+        
+        const ids = idsString.split(',');
+        let updates = {};
+        ids.forEach(id => {
+            updates[id] = null;
+        });
+        
+        await estoqueRef.update(updates);
+        mostrarToast(`${ids.length} lote(s) removidos`, 'success');
+        fecharModal();
+    };
+
+    window.fecharModal = () => {
+        document.getElementById('modalData').style.display = 'none';
+        document.getElementById('inputContainer').innerHTML = '';
+    };
+
+    function renderizarLista() {
+        const container = document.getElementById('lista-estoque');
+        
+        let itensFiltrados = Object.values(inventario);
+        
+        if (abaAtual === 'xml') {
+            itensFiltrados = itensFiltrados.filter(item => item.origem === 'xml');
+        } else {
+            itensFiltrados = itensFiltrados.filter(item => item.origem === 'estoque');
+        }
+        
+        itensFiltrados.sort((a, b) => {
+            if (!a.done && b.done) return -1;
+            if (a.done && !b.done) return 1;
+            return 0;
+        });
+        
+        if (itensFiltrados.length === 0) {
+            container.innerHTML = `
+                <div style="text-align: center; padding: 40px; background: white; border-radius: 16px; color: #6b7280;">
+                    Nenhum produto encontrado nesta aba
+                </div>
+            `;
+            return;
+        }
+        
+        container.innerHTML = itensFiltrados.map(item => `
+            <div class="produto-item ${item.done ? 'concluido' : 'pendente'}" onclick="abrirModal('${item.codigo}')">
+                <div class="produto-header">
+                    <span class="produto-codigo">${item.codigo}</span>
+                    <span class="produto-status ${item.done ? 'status-concluido' : 'status-pendente'}">
+                        ${item.done ? '✅ Concluído' : '⏳ Pendente'}
+                    </span>
+                </div>
+                <div class="produto-desc">${(item.desc || '').substring(0, 50)}${item.desc?.length > 50 ? '...' : ''}</div>
+                <div class="produto-detalhes">
+                    <span>📄 ${item.origem === 'xml' ? `NF ${item.nf}` : 'Estoque'}</span>
+                    <span>📦 ${item.qtde} un</span>
+                </div>
+                ${item.endereco ? `
+                <div class="produto-endereco">
+                    📍 ${item.endereco}
+                </div>
+                ` : ''}
+            </div>
+        `).join('');
+    }
+
+    function atualizarStatus() {
+        const lotes = Object.values(inventario);
+        document.getElementById('stat-lotes').innerText = lotes.length;
+        document.getElementById('stat-pendentes').innerText = lotes.filter(l => !l.done).length;
+    }
+
+    // Máscara para data
+    document.addEventListener('input', (e) => {
+        if (e.target.id === 'inputMesAno') {
+            let v = e.target.value.replace(/\D/g, "");
+            if (v.length >= 2) v = v.substring(0,2) + "/" + v.substring(2);
+            e.target.value = v;
+        }
+    });
+</script>
+</body>
+</html>
