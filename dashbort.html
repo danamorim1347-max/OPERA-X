@@ -253,6 +253,45 @@
             font-weight: 600;
         }
 
+        /* GAMIFICAÇÃO - Medalhas e indicadores */
+        .medal-gold { color: #FFD700; text-shadow: 0 0 10px rgba(255, 215, 0, 0.5); }
+        .medal-silver { color: #C0C0C0; text-shadow: 0 0 10px rgba(192, 192, 192, 0.5); }
+        .medal-bronze { color: #CD7F32; text-shadow: 0 0 10px rgba(205, 127, 50, 0.5); }
+        
+        .indicator-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-size: 9px;
+            font-weight: 700;
+            background: rgba(255,255,255,0.1);
+            color: #94a3b8;
+        }
+        
+        .indicator-badge i {
+            font-size: 8px;
+        }
+        
+        .speed-indicator { color: #3b82f6; }
+        .accuracy-indicator { color: #10b981; }
+        .items-indicator { color: #f59e0b; }
+        
+        .top-performer {
+            position: relative;
+            overflow: hidden;
+        }
+        .top-performer::before {
+            content: '👑';
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            font-size: 16px;
+            transform: rotate(15deg);
+            opacity: 0.8;
+        }
+
         .expandable-section {
             transition: all 0.3s ease;
         }
@@ -589,11 +628,16 @@
         </div>
     </div>
 
-    <!-- PERFORMANCE -->
+    <!-- PERFORMANCE - COM GAMIFICAÇÃO -->
     <div class="performance-section grid grid-cols-12 gap-2">
         <div class="col-span-9 glass flex flex-col overflow-hidden">
             <div class="p-2 bg-white/5 border-b border-white/5 text-[10px] font-black uppercase tracking-widest flex justify-between items-center italic">
-                <span><i class="fas fa-medal text-blue-500 mr-2"></i>RANKING</span>
+                <span><i class="fas fa-medal text-blue-500 mr-2"></i>RANKING DIÁRIO</span>
+                <div class="flex gap-2">
+                    <span class="indicator-badge"><i class="fas fa-tachometer-alt speed-indicator"></i> Velocidade</span>
+                    <span class="indicator-badge"><i class="fas fa-bullseye accuracy-indicator"></i> Precisão</span>
+                    <span class="indicator-badge"><i class="fas fa-boxes items-indicator"></i> Itens</span>
+                </div>
             </div>
             <div class="flex-1 overflow-auto custom-scroll">
                 <table class="w-full er-table compact-table">
@@ -605,8 +649,8 @@
                             <th class="text-center">ITENS</th>
                             <th class="text-center">MÉDIA</th>
                             <th class="text-center">MIN/PED</th>
-                            <th class="text-center">TEMPO</th>
-                            <th class="text-center">PROD</th>
+                            <th class="text-center">VELOCIDADE</th>
+                            <th class="text-center">PRECISÃO</th>
                             <th class="text-center">STATUS</th>
                         </tr>
                     </thead>
@@ -1222,7 +1266,11 @@
             tempoTotal: val.tempoTotal, 
             tempoMedio: (val.qtd > 0 && val.tempoTotal > 0) ? (val.tempoTotal / val.qtd).toFixed(1) : 0,
             mediaItens: val.qtd > 0 ? (val.itens / val.qtd).toFixed(1) : 0,
-            produtividade: (val.qtd > 0 && val.tempoTotal > 0) ? (val.itens / (val.tempoTotal / 60)).toFixed(1) : 0
+            produtividade: (val.qtd > 0 && val.tempoTotal > 0) ? (val.itens / (val.tempoTotal / 60)).toFixed(1) : 0,
+            // GAMIFICAÇÃO - Indicadores
+            velocidade: (val.qtd > 0 && val.tempoTotal > 0) ? Math.round(60 / (val.tempoTotal / val.qtd)) : 0,
+            precisao: (val.itens > 0) ? Math.round((val.qtd / val.itens) * 100) : 0,
+            itensPorHora: (val.tempoTotal > 0) ? Math.round((val.itens / (val.tempoTotal / 60))) : 0
         })).sort((a, b) => b.qtd - a.qtd);
 
         const mediaEq = ranking.length ? Math.round(tQtd / ranking.length) : 0;
@@ -1278,6 +1326,7 @@
             const isFirst = item.pos === 0;
             const avatarClass = isFirst ? 'avatar-xl' : (index === 0 ? 'avatar-large silver-border' : 'avatar-large bronze-border');
             const scale = isFirst ? 'scale-110' : '';
+            const medalClass = isFirst ? 'medal-gold' : (index === 0 ? 'medal-silver' : 'medal-bronze');
             
             return `
                 <div class="podium-item ${scale} fade-in-data" style="animation-delay: ${index * 0.1}s">
@@ -1286,7 +1335,10 @@
                     </div>
                     <div class="podium-name">${u.nome.split(' ')[0]}</div>
                     <div class="podium-value">${u.qtd}</div>
-                    <div class="podium-label">pedidos</div>
+                    <div class="flex gap-2 mt-1">
+                        <span class="text-[8px] speed-indicator"><i class="fas fa-tachometer-alt"></i> ${u.velocidade}/h</span>
+                        <span class="text-[8px] accuracy-indicator"><i class="fas fa-bullseye"></i> ${u.precisao}%</span>
+                    </div>
                 </div>
             `;
         }).join('');
@@ -1295,19 +1347,29 @@
     function renderTabelaRanking(ranking, media, maiorQtd) {
         document.getElementById('rankingBody').innerHTML = ranking.slice(0, 8).map((r, i) => {
             const rowClass = i === 0 ? 'rank-1' : (i === 1 ? 'rank-2' : (i === 2 ? 'rank-3' : ''));
+            
+            // Medalhas para os 3 primeiros
+            let medalIcon = '';
+            if (i === 0) medalIcon = '<i class="fas fa-crown medal-gold ml-1"></i>';
+            else if (i === 1) medalIcon = '<i class="fas fa-medal medal-silver ml-1"></i>';
+            else if (i === 2) medalIcon = '<i class="fas fa-medal medal-bronze ml-1"></i>';
 
             return `<tr class="hover:bg-white/5 transition-all border-b border-white/5 ${rowClass}" style="animation-delay: ${i * 0.05}s">
                 <td class="px-2 py-1 font-black text-slate-500 italic text-xs">#${i+1}</td>
                 <td class="px-2 py-1 flex items-center gap-2 cursor-pointer" onclick="triggerUpload('${r.nome}')">
                     <div class="avatar shadow-lg shadow-black/40"><img src="${fotoCache[r.nome.replace(/\s/g, '_')] || `https://ui-avatars.com/api/?name=${r.nome}&background=1e293b&color=fff&size=36`}"></div>
-                    <span class="font-black text-xs uppercase text-slate-200">${r.nome.split(' ')[0]}</span>
+                    <span class="font-black text-xs uppercase text-slate-200">${r.nome.split(' ')[0]} ${medalIcon}</span>
                 </td>
                 <td class="px-2 py-1 text-center font-black text-blue-400 text-xs">${r.qtd}</td>
                 <td class="px-2 py-1 text-center font-black text-orange-400 text-xs">${r.itens}</td>
                 <td class="px-2 py-1 text-center font-bold text-purple-400 text-xs">${r.mediaItens}</td>
                 <td class="px-2 py-1 text-center text-purple-400 font-bold italic text-xs">${r.tempoMedio > 0 ? r.tempoMedio + 'm' : '-'}</td>
-                <td class="px-2 py-1 text-center text-emerald-400 font-black text-xs">${Math.floor(r.tempoTotal/60)}h</td>
-                <td class="px-2 py-1 text-center font-black text-amber-400 text-xs">${r.produtividade}</td>
+                <td class="px-2 py-1 text-center">
+                    <span class="speed-indicator font-black text-xs">${r.velocidade}/h</span>
+                </td>
+                <td class="px-2 py-1 text-center">
+                    <span class="accuracy-indicator font-black text-xs">${r.precisao}%</span>
+                </td>
                 <td class="px-2 py-1 text-center">
                     <span class="px-1 py-0.5 rounded text-[9px] font-black ${r.qtd >= media ? 'bg-emerald-500/20 text-emerald-500' : 'bg-rose-500/20 text-rose-500'}">
                         ${r.qtd >= media ? 'META' : '↓'}
