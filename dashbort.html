@@ -550,7 +550,7 @@
 </div>
 
 <div class="main-container max-w-[1920px] mx-auto w-full">
-    <!-- HEADER -->
+    <!-- HEADER COM FILTROS -->
     <header class="header-section flex justify-between items-center glass p-4 shadow-2xl">
         <div class="flex items-center gap-4">
             <div class="bg-blue-600/20 p-2 rounded-xl border border-blue-500/30">
@@ -574,11 +574,9 @@
 
             <div class="h-6 w-[1px] bg-white/10"></div>
 
-            <div class="flex gap-2 items-center bg-black/20 p-1 rounded-lg">
-                <input type="date" id="dataInicio" class="bg-white/5 border border-white/10 rounded-lg p-1 text-xs text-white outline-none w-28">
-                <span class="text-slate-500 text-xs font-bold uppercase italic">ATÉ</span>
-                <input type="date" id="dataFim" class="bg-white/5 border border-white/10 rounded-lg p-1 text-xs text-white outline-none w-28">
-                <button onclick="aplicarPeriodoPersonalizado()" class="bg-blue-600 px-3 py-1 rounded-lg text-xs font-bold uppercase hover:bg-blue-500 transition-all shadow-lg italic">FILTRAR</button>
+            <div class="live-badge flex items-center gap-2 bg-white/5 px-4 py-2 rounded-full text-xs font-bold">
+                <div class="pulse w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div> 
+                <span class="text-slate-400">SINCRO EM TEMPO REAL</span>
             </div>
         </div>
     </header>
@@ -1168,19 +1166,34 @@
         const novosDados = rows.map(r => {
             const nome = r.c[2]?.v || '';
             const qtd = parseInt(r.c[3]?.v) || 0;
+            const itens = parseInt(r.c[4]?.v) || 0;
+            
             if (!nome || String(nome).toUpperCase().includes('TOTAL')) return null;
+            
             const ini = parseHora(r.c[5]?.v || r.c[5]?.f);
             const fim = parseHora(r.c[6]?.v || r.c[6]?.f);
             let tempo = (ini !== null && fim !== null) ? (fim - ini) : 0;
             if (tempo < 0) tempo += 1440;
+            
+            // CORREÇÃO: Tempo máximo de 480 minutos (8 horas)
+            if (tempo > 480) tempo = 0;
+            
             let dObj = null;
             if (r.c[0]?.v && r.c[0].v.toString().includes('Date')) {
                 const match = r.c[0].v.match(/Date\((\d+),(\d+),(\d+)\)/);
                 if (match) dObj = new Date(match[1], match[2], match[3]);
             } else if (r.c[0]?.f) {
-                const p = r.c[0].f.split('/'); dObj = new Date(p[2], p[1]-1, p[0]);
+                const p = r.c[0].f.split('/'); 
+                dObj = new Date(p[2], p[1]-1, p[0]);
             }
-            return { data: dObj, nome: String(nome).trim().toUpperCase(), qtd, itens: parseInt(r.c[4]?.v) || 0, tempoTotal: tempo > 480 ? 0 : tempo };
+            
+            return { 
+                data: dObj, 
+                nome: String(nome).trim().toUpperCase(), 
+                qtd: qtd, 
+                itens: itens, 
+                tempoTotal: tempo 
+            };
         }).filter(x => x !== null && x.data !== null);
 
         dadosBrutosSep.push(...novosDados);
@@ -1189,34 +1202,22 @@
     };
 
     function aplicarFiltroTempo(tipo) {
-        if (isLoading) return; // Evita múltiplos cliques durante carregamento
+        if (isLoading) return;
         isLoading = true;
         
         currentFilter = tipo;
         document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
         document.getElementById(`btn${tipo.charAt(0).toUpperCase() + tipo.slice(1)}`).classList.add('active');
 
-        // Animação de loading nos cards
+        // Animação de loading
         document.querySelectorAll('.metric-card h2').forEach(el => {
             el.style.opacity = '0.5';
         });
 
-        if (tipo !== 'personalizado') {
-            const agora = new Date();
-            const meses = ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"];
-            const anoCurto = agora.getFullYear().toString().slice(-2);
-            const nomeAba = `SEPARAÇÃO ${meses[agora.getMonth()]}/${anoCurto}`;
-
-            dadosBrutosSep = [];
-            buscarDadosSep(nomeAba);
-        }
-
-        // Simula um pequeno delay para a animação
         setTimeout(() => {
             renderizarSeparacao();
             tempoProgresso = 0;
             
-            // Restaura opacidade
             document.querySelectorAll('.metric-card h2').forEach(el => {
                 el.style.opacity = '1';
             });
@@ -1226,20 +1227,18 @@
     }
 
     function aplicarPeriodoPersonalizado() {
-        if (isLoading) return;
-        
-        const iniStr = document.getElementById('dataInicio').value;
-        const fimStr = document.getElementById('dataFim').value;
-        if(!iniStr || !fimStr) return notify("SELECIONE O INTERVALO!");
-        notify(`CARREGANDO DADOS...`);
+        notify("Função desativada");
     }
 
     function renderizarSeparacao() {
-        const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+        const hoje = new Date(); 
+        hoje.setHours(0, 0, 0, 0);
 
+        // CORREÇÃO: Aplicar filtro baseado no período selecionado
         let filtrados = dadosBrutosSep.filter(item => {
             const d = item.data;
             const diffDias = (hoje - d) / 86400000;
+            
             if (currentFilter === "hoje" && d.toDateString() === hoje.toDateString()) return true;
             if (currentFilter === "semana" && diffDias >= 0 && diffDias <= 7) return true;
             if (currentFilter === "mes" && d.getMonth() === hoje.getMonth() && d.getFullYear() === hoje.getFullYear()) return true;
@@ -1267,10 +1266,10 @@
             tempoMedio: (val.qtd > 0 && val.tempoTotal > 0) ? (val.tempoTotal / val.qtd).toFixed(1) : 0,
             mediaItens: val.qtd > 0 ? (val.itens / val.qtd).toFixed(1) : 0,
             produtividade: (val.qtd > 0 && val.tempoTotal > 0) ? (val.itens / (val.tempoTotal / 60)).toFixed(1) : 0,
-            // GAMIFICAÇÃO - Indicadores
-            velocidade: (val.qtd > 0 && val.tempoTotal > 0) ? Math.round(60 / (val.tempoTotal / val.qtd)) : 0,
-            precisao: (val.itens > 0) ? Math.round((val.qtd / val.itens) * 100) : 0,
-            itensPorHora: (val.tempoTotal > 0) ? Math.round((val.itens / (val.tempoTotal / 60))) : 0
+            // GAMIFICAÇÃO - Indicadores corrigidos
+            velocidade: (val.qtd > 0 && val.tempoTotal > 0) ? Math.round((val.qtd * 60) / val.tempoTotal) : 0,
+            precisao: (val.itens > 0 && val.qtd > 0) ? Math.round((val.qtd / val.itens) * 100) : 0,
+            itensPorHora: (val.tempoTotal > 0) ? Math.round((val.itens * 60) / val.tempoTotal) : 0
         })).sort((a, b) => b.qtd - a.qtd);
 
         const mediaEq = ranking.length ? Math.round(tQtd / ranking.length) : 0;
@@ -1280,7 +1279,10 @@
         animarValor('totalPedidos', tQtd);
         animarValor('totalItens', tItens);
         animarValor('mediaEquipe', mediaEq);
-        document.getElementById('tempoMedioGeral').innerHTML = `${(tQtd > 0 ? tTempo/tQtd : 0).toFixed(1)}m`;
+        
+        // CORREÇÃO: Cálculo correto do tempo médio
+        const tempoMedioCalc = tQtd > 0 ? (tTempo / tQtd).toFixed(1) : 0;
+        document.getElementById('tempoMedioGeral').innerHTML = `${tempoMedioCalc}m`;
         document.getElementById('melhorColaborador').innerText = ranking[0]?.nome || '-';
         document.getElementById('piorColaborador').innerText = ranking[ranking.length - 1]?.nome || '-';
 
@@ -1293,18 +1295,31 @@
     function animarValor(elementId, novoValor) {
         const el = document.getElementById(elementId);
         const valorAtual = parseInt(el.innerText) || 0;
-        const incremento = Math.ceil((novoValor - valorAtual) / 10);
+        
+        if (valorAtual === novoValor) return;
+        
+        const incremento = Math.ceil(Math.abs(novoValor - valorAtual) / 10);
         let count = valorAtual;
         
         const timer = setInterval(() => {
-            count += incremento;
-            if ((incremento > 0 && count >= novoValor) || (incremento < 0 && count <= novoValor)) {
-                el.innerText = novoValor;
-                clearInterval(timer);
+            if (novoValor > valorAtual) {
+                count += incremento;
+                if (count >= novoValor) {
+                    el.innerText = novoValor;
+                    clearInterval(timer);
+                } else {
+                    el.innerText = count;
+                }
             } else {
-                el.innerText = count;
+                count -= incremento;
+                if (count <= novoValor) {
+                    el.innerText = novoValor;
+                    clearInterval(timer);
+                } else {
+                    el.innerText = count;
+                }
             }
-        }, 30);
+        }, 20);
     }
 
     function renderPodium(ranking) {
@@ -1326,7 +1341,6 @@
             const isFirst = item.pos === 0;
             const avatarClass = isFirst ? 'avatar-xl' : (index === 0 ? 'avatar-large silver-border' : 'avatar-large bronze-border');
             const scale = isFirst ? 'scale-110' : '';
-            const medalClass = isFirst ? 'medal-gold' : (index === 0 ? 'medal-silver' : 'medal-bronze');
             
             return `
                 <div class="podium-item ${scale} fade-in-data" style="animation-delay: ${index * 0.1}s">
@@ -1414,8 +1428,14 @@
                 maintainAspectRatio: false, 
                 plugins: { legend: { display: false } },
                 scales: {
-                    y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#94a3b8', font: { size: 8 } } },
-                    x: { ticks: { color: '#94a3b8', font: { size: 8 } } }
+                    y: { 
+                        beginAtZero: true, 
+                        grid: { color: 'rgba(255,255,255,0.1)' }, 
+                        ticks: { color: '#94a3b8', font: { size: 8 } }
+                    },
+                    x: { 
+                        ticks: { color: '#94a3b8', font: { size: 8 } }
+                    }
                 }
             } 
         });
@@ -1467,8 +1487,9 @@
         input.click();
     }
 
+    // Timeline automática
     setInterval(() => { 
-        if (currentFilter !== 'personalizado' && !isLoading) { 
+        if (!isLoading) { 
             tempoProgresso += 0.5; 
             document.getElementById('timelineBar').style.width = tempoProgresso + '%'; 
             if (tempoProgresso >= 100) { 
@@ -1478,11 +1499,10 @@
         } 
     }, 150);
 
-    setInterval(() => { 
-        if (currentFilter === 'personalizado' && !isLoading) {
-            renderizarSeparacao();
-        } else {
-            init(); 
+    // Atualização automática a cada 30 segundos
+    setInterval(() => {
+        if (!isLoading) {
+            init();
         }
     }, 30000);
 
