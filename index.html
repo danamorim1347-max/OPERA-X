@@ -69,7 +69,12 @@
         <table class="print-table">
             <thead>
                 <tr>
-                    <th>Localização</th><th>Código</th><th>Descrição</th><th>Qtd</th>
+                    <th>Localização</th>
+                    <th>Código</th>
+                    <th>Descrição</th>
+                    <th>Físico</th>
+                    <th>Disponível</th>
+                    <th>Qtd</th>
                 </tr>
             </thead>
             <tbody id="print-table-body"></tbody>
@@ -233,7 +238,7 @@
                             <div class="lg:col-span-7 glass p-8">
                                 <div class="flex justify-between items-center mb-4">
                                     <h3 class="text-xs font-black uppercase text-slate-400">Itens</h3>
-                                    <button onclick="window.print()" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-[10px] font-black uppercase">Imprimir Lista</button>
+                                    <button onclick="App.logic.printPickingList()" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-[10px] font-black uppercase">Imprimir Lista</button>
                                 </div>
                                 <div id="queue-box"></div>
                             </div>
@@ -253,18 +258,36 @@
                     const items = Object.entries(data).map(([id, val]) => ({ id, ...val }));
                     items.sort((a,b) => String(a.rua + a.rck).localeCompare(String(b.rua + b.rck)));
 
-                    box.innerHTML = items.map(i => `
-                        <div class="simple-list-item">
-                            <div>
-                                <div class="simple-list-code">${i.codigo}</div>
-                                <div class="text-[9px] text-slate-400 font-bold uppercase">${Utils.formatCoord(i.rua)}.${Utils.formatCoord(i.rck)}.${i.lin}/${i.col}</div>
-                                <div class="text-[10px] text-slate-500 truncate w-40">${i.nome}</div>
-                            </div>
-                            <div class="flex items-center gap-3">
-                                <div class="simple-list-qty">${i.qtyItems ? 'Q:'+i.qtyItems : i.qty+'x'}</div>
-                                <button onclick="App.logic.deleteItem('${i.id}')" class="text-rose-500 p-2"><i class="fa-solid fa-trash"></i></button>
-                            </div>
-                        </div>`).join('');
+                    if (App.state.mode === 'picking') {
+                        // Modo reposição: exibir informações de físico e disponível
+                        box.innerHTML = items.map(i => `
+                            <div class="simple-list-item">
+                                <div>
+                                    <div class="simple-list-code">${i.codigo}</div>
+                                    <div class="text-[9px] text-slate-400 font-bold uppercase">${Utils.formatCoord(i.rua)}.${Utils.formatCoord(i.rck)}.${i.lin}/${i.col}</div>
+                                    <div class="text-[10px] text-slate-500 truncate w-40">${i.nome}</div>
+                                    <div class="text-[9px] text-slate-400">Físico: ${i.fisico || 0} | Disp: ${i.disponivel || 0}</div>
+                                </div>
+                                <div class="flex items-center gap-3">
+                                    <div class="simple-list-qty">${i.qtyItems ? 'Q:'+i.qtyItems : i.qty+'x'}</div>
+                                    <button onclick="App.logic.deleteItem('${i.id}')" class="text-rose-500 p-2"><i class="fa-solid fa-trash"></i></button>
+                                </div>
+                            </div>`).join('');
+                    } else {
+                        // Modo etiquetas (sem físico/disponível)
+                        box.innerHTML = items.map(i => `
+                            <div class="simple-list-item">
+                                <div>
+                                    <div class="simple-list-code">${i.codigo}</div>
+                                    <div class="text-[9px] text-slate-400 font-bold uppercase">${Utils.formatCoord(i.rua)}.${Utils.formatCoord(i.rck)}.${i.lin}/${i.col}</div>
+                                    <div class="text-[10px] text-slate-500 truncate w-40">${i.nome}</div>
+                                </div>
+                                <div class="flex items-center gap-3">
+                                    <div class="simple-list-qty">${i.qtyItems ? 'Q:'+i.qtyItems : i.qty+'x'}</div>
+                                    <button onclick="App.logic.deleteItem('${i.id}')" class="text-rose-500 p-2"><i class="fa-solid fa-trash"></i></button>
+                                </div>
+                            </div>`).join('');
+                    }
 
                     if (App.state.mode === 'labels' && document.getElementById('queue-foot')) {
                         document.getElementById('queue-foot').innerHTML = `<button onclick="App.logic.copyLabelsZPL()" class="w-full bg-white text-black py-4 rounded-xl font-black uppercase shadow-xl">Copiar ZPL (2 por Etiqueta)</button>`;
@@ -352,8 +375,9 @@
                         const code = parts[0], qty = parts[1] || 1, search = Utils.cleanId(code);
                         const p = App.state.inventory.find(i => Utils.cleanId(i.COD) === search) || { NOM: 'N/E' };
                         await push(ref(db, 'active_separation'), { 
-                            codigo: code, nome: p.NOM, qty: qty, rua: p.RUA || '-', 
-                            rck: p.RCK || '-', lin: p.LIN || '-', col: p.COL || '-'
+                            codigo: code, nome: p.NOM, qty: qty, 
+                            rua: p.RUA || '-', rck: p.RCK || '-', lin: p.LIN || '-', col: p.COL || '-',
+                            fisico: p.FIS || '0', disponivel: p.EST || '0'
                         });
                     }
                     document.getElementById('pick-text').value = '';
@@ -367,6 +391,26 @@
 
                 async cleanQueue(path) {
                     if (confirm('Limpar lista inteira?')) await remove(ref(db, path));
+                },
+
+                printPickingList() {
+                    onValue(ref(db, 'active_separation'), (snap) => {
+                        const items = snap.exists() ? Object.values(snap.val()) : [];
+                        items.sort((a,b) => String(a.rua + a.rck).localeCompare(String(b.rua + b.rck)));
+                        const tbody = document.getElementById('print-table-body');
+                        tbody.innerHTML = items.map(i => `
+                            <tr>
+                                <td>${Utils.formatCoord(i.rua)}.${Utils.formatCoord(i.rck)}.${i.lin}/${i.col}</td>
+                                <td>${i.codigo}</td>
+                                <td>${i.nome}</td>
+                                <td>${i.fisico || 0}</td>
+                                <td>${i.disponivel || 0}</td>
+                                <td>${i.qty}</td>
+                            </tr>
+                        `).join('');
+                        document.getElementById('print-date').innerText = new Date().toLocaleString('pt-BR');
+                        window.print();
+                    }, { onlyOnce: true });
                 },
 
                 fileHandler: {
@@ -383,7 +427,9 @@
                                 if (r[0]) {
                                     data[r[0]] = { 
                                         COD: r[0], NOM: r[1], RUA: Utils.formatCoord(r[4]), 
-                                        RCK: Utils.formatCoord(r[5]), LIN: r[6], COL: r[7], EST: r[10] 
+                                        RCK: Utils.formatCoord(r[5]), LIN: r[6], COL: r[7], 
+                                        FIS: r[8],   // Total físico (coluna I)
+                                        EST: r[10]   // Total disponível (coluna K)
                                     };
                                 }
                             }
