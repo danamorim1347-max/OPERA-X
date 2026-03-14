@@ -209,7 +209,6 @@
                     document.getElementById('main-view').innerHTML = `
                         <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
                             <div class="lg:col-span-4 glass p-8 space-y-4 h-fit">
-                                <!-- Seletor de Modo Interno -->
                                 <div class="flex gap-2 p-1 bg-black/40 rounded-xl mb-4">
                                     <button onclick="App.logic.setLabelSubMode('single')" class="flex-1 py-2 text-[10px] font-black uppercase rounded-lg transition-all ${!isBatch ? 'bg-blue-600 text-white' : 'text-slate-500 hover:text-white'}">Individual</button>
                                     <button onclick="App.logic.setLabelSubMode('batch')" class="flex-1 py-2 text-[10px] font-black uppercase rounded-lg transition-all ${isBatch ? 'bg-blue-600 text-white' : 'text-slate-500 hover:text-white'}">Lote</button>
@@ -309,7 +308,7 @@
                         document.getElementById('queue-foot').innerHTML = `
                             <div class="flex flex-col gap-3">
                                 <button onclick="App.logic.copyLabelsZPL()" class="w-full bg-white text-black py-4 rounded-xl font-black uppercase shadow-xl">Copiar ZPL (2 por Etiqueta)</button>
-                                <button onclick="App.logic.copyLabelsZPL4()" class="w-full bg-slate-200 text-black py-4 rounded-xl font-black uppercase shadow-xl">Copiar ZPL (4 por Etiqueta)</button>
+                                <button onclick="App.logic.copyLabelsZPL4Vertical()" class="w-full bg-slate-200 text-black py-4 rounded-xl font-black uppercase shadow-xl">Copiar ZPL (4 Produtos)</button>
                             </div>`;
                     }
                 }
@@ -424,30 +423,40 @@
                     }, { onlyOnce: true });
                 },
 
-                async copyLabelsZPL4() {
+                async copyLabelsZPL4Vertical() {
                     onValue(ref(db, 'print_queue'), (snap) => {
                         if (!snap.exists()) return;
                         const items = Object.values(snap.val());
                         let zpl = "";
+                        const yOffsets = [20, 300, 580, 860];
+
                         for (let i = 0; i < items.length; i += 4) {
                             zpl += "^XA^CI28^PW812^LL1218\n";
-                            const offsets = [
-                                {x: 20, y: 20}, {x: 415, y: 20},
-                                {x: 20, y: 620}, {x: 415, y: 620}
-                            ];
-                            offsets.forEach((pos, idx) => {
-                                const it = items[i + idx]; if (!it) return;
+                            
+                            yOffsets.forEach((y, idx) => {
+                                const it = items[i + idx];
+                                if (!it) return;
+
                                 const addr = `${Utils.sanitizeText(it.rua)}.${Utils.sanitizeText(it.rck)}.${it.lin}/${it.col}`;
-                                zpl += `^FO${pos.x},${pos.y}^A0N,70,60^FD${Utils.cleanId(it.codigo)}^FS\n`;
-                                if (it.val) zpl += `^FO${pos.x+210},${pos.y-5}^GB160,50,50^FS^FO${pos.x+215},${pos.y}^A0N,45,40^FR^FD${it.val}^FS\n`;
-                                zpl += `^FO${pos.x},${pos.y+75}^A0N,30,30^FB375,2,0,L,0^FD${Utils.sanitizeText(it.nome)}^FS\n`;
-                                zpl += `^FO${pos.x},${pos.y+150}^A0N,28,28^FD${addr}^FS\n`;
-                                if (it.qtyItems) zpl += `^FO${pos.x+280},${pos.y+150}^A0N,40,40^FDQ:${it.qtyItems}^FS\n`;
-                                zpl += `^BY2,3,110^FO${pos.x+40},${pos.y+200}^BCN,110,Y,N,N^FD${it.codigo}^FS\n`;
+                                
+                                // Bloco do Produto
+                                zpl += `^FO20,${y}^A0N,60,50^FD${Utils.cleanId(it.codigo)}^FS\n`;
+                                if (it.val) zpl += `^FO220,${y-5}^GB240,45,45^FS^FO230,${y}^A0N,40,35^FR^FD${it.val}^FS\n`;
+                                if (it.qtyItems) zpl += `^FO480,${y}^A0N,55,50^FDQ:${it.qtyItems}^FS\n`;
+                                
+                                zpl += `^FO20,${y + 65}^A0N,30,30^FB750,2,0,L,0^FD${Utils.sanitizeText(it.nome)}^FS\n`;
+                                zpl += `^FO20,${y + 130}^A0N,28,28^FD${addr}^FS\n`;
+                                
+                                // Código de barras reduzido para caber no layout vertical de 4
+                                zpl += `^BY2,3,80^FO60,${y + 170}^BCN,80,Y,N,N^FD${it.codigo}^FS\n`;
+                                
+                                // Linha separadora opcional para facilitar corte visual
+                                zpl += `^FO10,${y + 275}^GB790,1,1^FS\n`;
                             });
+
                             zpl += "^XZ\n";
                         }
-                        navigator.clipboard.writeText(zpl).then(() => Notifications.show('ZPL 4-por-etiqueta copiado!', 'success'));
+                        navigator.clipboard.writeText(zpl).then(() => Notifications.show('ZPL 4 produtos por etiqueta copiado!', 'success'));
                     }, { onlyOnce: true });
                 },
 
