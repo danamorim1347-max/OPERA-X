@@ -49,6 +49,81 @@
         .dash-bar { height: 6px; width: 80px; background: #0f172a; border-radius: 3px; overflow: hidden; }
         .dash-fill { height: 100%; background: var(--brand); transition: width 0.5s ease; }
 
+        .expiry-selector {
+            background: #0f172a;
+            border-radius: 1rem;
+            padding: 1rem;
+            margin-top: 0.75rem;
+            border: 1px solid #1e293b;
+        }
+        .expiry-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid #1e293b;
+        }
+        .expiry-header span {
+            font-size: 0.7rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            color: #94a3b8;
+        }
+        .expiry-badge {
+            background: #1e293b;
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            font-size: 0.75rem;
+            font-weight: 800;
+            color: #fbbf24;
+            font-family: monospace;
+        }
+        .month-grid, .year-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+        }
+        .month-btn, .year-btn {
+            background: #000000;
+            border: 1px solid #1e293b;
+            border-radius: 0.5rem;
+            padding: 0.5rem 0.25rem;
+            text-align: center;
+            font-size: 0.75rem;
+            font-weight: 800;
+            color: #cbd5e1;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .month-btn:hover, .year-btn:hover {
+            background: #1e293b;
+            border-color: #3b82f6;
+        }
+        .month-btn.active, .year-btn.active {
+            background: #3b82f6;
+            color: white;
+            border-color: #3b82f6;
+        }
+        .expiry-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.75rem;
+        }
+        .expiry-clear {
+            flex: 1;
+            background: #1e293b;
+            border: none;
+            border-radius: 0.5rem;
+            padding: 0.5rem;
+            font-size: 0.7rem;
+            font-weight: 800;
+            color: #ef4444;
+            cursor: pointer;
+            text-transform: uppercase;
+        }
+
         @media print { 
             .no-print { display: none !important; }
             body { background: white !important; color: black !important; }
@@ -159,7 +234,7 @@
         };
 
         window.App = {
-            state: { mode: 'locate', labelSubMode: 'single', inventory: [], activeListener: null },
+            state: { mode: 'locate', labelSubMode: 'single', inventory: [], activeListener: null, selectedExpiry: '' },
 
             ui: {
                 setMode(mode) {
@@ -219,28 +294,172 @@
                                 ${!isBatch ? `
                                     <input type="text" id="etq-in" class="input-pro w-full py-4 font-bold" placeholder="Código" oninput="App.logic.lookupProduct(this.value)">
                                     <div id="etq-name" class="text-center font-bold text-blue-400 text-sm h-10 uppercase"></div>
-                                    <div class="grid grid-cols-1 gap-1">
-                                        <span class="text-[10px] text-slate-500 font-bold uppercase">Validade</span>
-                                        <input type="text" id="etq-val" class="input-pro p-3 text-xs font-bold" placeholder="MM/AAAA" maxlength="7" oninput="App.logic.handleDateInput(this)">
-                                    </div>
+                                    <div id="expiry-selector-container"></div>
                                     <div class="grid grid-cols-2 gap-3">
                                         <div><span class="text-[10px] text-slate-500 font-bold uppercase">Cópias</span><input type="number" id="etq-print-qty" class="input-pro w-full p-3 text-xs font-bold" value="1"></div>
                                         <div><span class="text-[10px] text-slate-500 font-bold uppercase">Qtd Itens</span><input type="text" id="etq-items-qty" class="input-pro w-full p-3 text-xs font-bold" placeholder="Opcional"></div>
                                     </div>
                                     <button onclick="App.logic.addLabel()" class="w-full bg-blue-600 text-white py-5 rounded-2xl font-black uppercase shadow-lg">Adicionar</button>
                                 ` : `
-                                    <div class="grid grid-cols-1 gap-1">
-                                        <span class="text-[10px] text-slate-500 font-bold uppercase">Validade para o Lote</span>
-                                        <input type="text" id="etq-val" class="input-pro p-3 text-xs font-bold" placeholder="MM/AAAA" maxlength="7" oninput="App.logic.handleDateInput(this)">
-                                    </div>
+                                    <div id="expiry-selector-container-batch"></div>
                                     <textarea id="etq-batch" class="input-pro w-full h-48 p-3 text-left text-xs" placeholder="Código Qtd&#10;Ex:&#10;78945 3&#10;12345"></textarea>
                                     <button onclick="App.logic.addLabelBatch()" class="w-full bg-blue-600 text-white py-5 rounded-2xl font-black uppercase shadow-lg">Gerar Lote</button>
                                 `}
 
                                 <button onclick="App.logic.cleanQueue('print_queue')" class="w-full bg-rose-600/20 text-rose-500 py-3 rounded-xl font-bold uppercase text-[10px] mt-4">Limpar Fila</button>
+                                <div class="flex flex-col gap-2 mt-2">
+                                    <button onclick="App.logic.copyLabelsZPL()" class="w-full bg-white text-black py-3 rounded-xl font-black uppercase text-[10px] shadow-lg hover:bg-slate-200 transition-all">Copiar ZPL (2 por Etiqueta)</button>
+                                    <button onclick="App.logic.copyLabelsZPL4Vertical()" class="w-full bg-slate-200 text-black py-3 rounded-xl font-black uppercase text-[10px] shadow-lg hover:bg-white transition-all">Copiar ZPL (4 Produtos)</button>
+                                </div>
                             </div>
                             <div class="lg:col-span-8 glass p-8"><div id="queue-box"></div><div id="queue-foot" class="mt-6"></div></div>
                         </div>`;
+                    
+                    this.renderExpirySelector();
+                },
+
+                renderExpirySelector() {
+                    const container = document.getElementById('expiry-selector-container');
+                    const containerBatch = document.getElementById('expiry-selector-container-batch');
+                    const months = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
+                    const currentYear = new Date().getFullYear();
+                    const years = [];
+                    for (let y = currentYear; y <= currentYear + 10; y++) {
+                        years.push(y);
+                    }
+                    
+                    const selectorHTML = `
+                        <div class="expiry-selector">
+                            <div class="expiry-header">
+                                <span><i class="fa-regular fa-calendar"></i> DATA DE VALIDADE</span>
+                                <span class="expiry-badge" id="expiry-display">---</span>
+                            </div>
+                            <div class="month-grid" id="month-grid">
+                                ${months.map(month => `<div class="month-btn" data-month="${month}">${month}</div>`).join('')}
+                            </div>
+                            <div class="year-grid" id="year-grid">
+                                ${years.map(year => `<div class="year-btn" data-year="${year}">${year}</div>`).join('')}
+                            </div>
+                            <div class="expiry-actions">
+                                <button class="expiry-clear" id="expiry-clear">LIMPAR</button>
+                            </div>
+                        </div>
+                    `;
+                    
+                    if (container) container.innerHTML = selectorHTML;
+                    if (containerBatch) containerBatch.innerHTML = selectorHTML;
+                    
+                    if (container) {
+                        this.attachExpiryEvents();
+                    }
+                    if (containerBatch) {
+                        this.attachExpiryEventsBatch();
+                    }
+                },
+                
+                attachExpiryEvents() {
+                    const monthBtns = document.querySelectorAll('#expiry-selector-container .month-btn');
+                    const yearBtns = document.querySelectorAll('#expiry-selector-container .year-btn');
+                    const clearBtn = document.querySelector('#expiry-selector-container .expiry-clear');
+                    const expiryDisplay = document.querySelector('#expiry-selector-container #expiry-display');
+                    
+                    let selectedMonth = null;
+                    let selectedYear = null;
+                    
+                    const updateDisplay = () => {
+                        if (selectedMonth && selectedYear) {
+                            const monthNumber = this.getMonthNumber(selectedMonth);
+                            const displayValue = `${monthNumber}/${selectedYear}`;
+                            if (expiryDisplay) expiryDisplay.textContent = displayValue;
+                            App.state.selectedExpiry = displayValue;
+                        } else {
+                            if (expiryDisplay) expiryDisplay.textContent = '---';
+                            App.state.selectedExpiry = '';
+                        }
+                    };
+                    
+                    monthBtns.forEach(btn => {
+                        btn.onclick = () => {
+                            monthBtns.forEach(b => b.classList.remove('active'));
+                            btn.classList.add('active');
+                            selectedMonth = btn.getAttribute('data-month');
+                            updateDisplay();
+                        };
+                    });
+                    
+                    yearBtns.forEach(btn => {
+                        btn.onclick = () => {
+                            yearBtns.forEach(b => b.classList.remove('active'));
+                            btn.classList.add('active');
+                            selectedYear = btn.getAttribute('data-year');
+                            updateDisplay();
+                        };
+                    });
+                    
+                    if (clearBtn) {
+                        clearBtn.onclick = () => {
+                            selectedMonth = null;
+                            selectedYear = null;
+                            monthBtns.forEach(b => b.classList.remove('active'));
+                            yearBtns.forEach(b => b.classList.remove('active'));
+                            updateDisplay();
+                        };
+                    }
+                },
+                
+                attachExpiryEventsBatch() {
+                    const monthBtns = document.querySelectorAll('#expiry-selector-container-batch .month-btn');
+                    const yearBtns = document.querySelectorAll('#expiry-selector-container-batch .year-btn');
+                    const clearBtn = document.querySelector('#expiry-selector-container-batch .expiry-clear');
+                    const expiryDisplay = document.querySelector('#expiry-selector-container-batch #expiry-display');
+                    
+                    let selectedMonth = null;
+                    let selectedYear = null;
+                    
+                    const updateDisplay = () => {
+                        if (selectedMonth && selectedYear) {
+                            const monthNumber = this.getMonthNumber(selectedMonth);
+                            const displayValue = `${monthNumber}/${selectedYear}`;
+                            if (expiryDisplay) expiryDisplay.textContent = displayValue;
+                            App.state.selectedExpiryBatch = displayValue;
+                        } else {
+                            if (expiryDisplay) expiryDisplay.textContent = '---';
+                            App.state.selectedExpiryBatch = '';
+                        }
+                    };
+                    
+                    monthBtns.forEach(btn => {
+                        btn.onclick = () => {
+                            monthBtns.forEach(b => b.classList.remove('active'));
+                            btn.classList.add('active');
+                            selectedMonth = btn.getAttribute('data-month');
+                            updateDisplay();
+                        };
+                    });
+                    
+                    yearBtns.forEach(btn => {
+                        btn.onclick = () => {
+                            yearBtns.forEach(b => b.classList.remove('active'));
+                            btn.classList.add('active');
+                            selectedYear = btn.getAttribute('data-year');
+                            updateDisplay();
+                        };
+                    });
+                    
+                    if (clearBtn) {
+                        clearBtn.onclick = () => {
+                            selectedMonth = null;
+                            selectedYear = null;
+                            monthBtns.forEach(b => b.classList.remove('active'));
+                            yearBtns.forEach(b => b.classList.remove('active'));
+                            updateDisplay();
+                        };
+                    }
+                },
+                
+                getMonthNumber(monthAbbr) {
+                    const months = { 'JAN': '01', 'FEV': '02', 'MAR': '03', 'ABR': '04', 'MAI': '05', 'JUN': '06', 'JUL': '07', 'AGO': '08', 'SET': '09', 'OUT': '10', 'NOV': '11', 'DEZ': '12' };
+                    return months[monthAbbr] || '01';
                 },
 
                 renderPicking() {
@@ -305,11 +524,7 @@
                     }
 
                     if (App.state.mode === 'labels' && document.getElementById('queue-foot')) {
-                        document.getElementById('queue-foot').innerHTML = `
-                            <div class="flex flex-col gap-3">
-                                <button onclick="App.logic.copyLabelsZPL()" class="w-full bg-white text-black py-4 rounded-xl font-black uppercase shadow-xl">Copiar ZPL (2 por Etiqueta)</button>
-                                <button onclick="App.logic.copyLabelsZPL4Vertical()" class="w-full bg-slate-200 text-black py-4 rounded-xl font-black uppercase shadow-xl">Copiar ZPL (4 Produtos)</button>
-                            </div>`;
+                        document.getElementById('queue-foot').innerHTML = '';
                     }
                 }
             },
@@ -319,12 +534,6 @@
                     App.state.labelSubMode = mode;
                     App.ui.renderLabels();
                     App.ui.syncQueues();
-                },
-
-                handleDateInput(el) {
-                    let v = el.value.replace(/\D/g, '');
-                    if (v.length > 2) v = v.substring(0, 2) + '/' + v.substring(2, 6);
-                    el.value = v;
                 },
 
                 processLocate(code) {
@@ -356,11 +565,17 @@
 
                 async addLabel() {
                     const code = document.getElementById('etq-in').value;
+                    if (!code) {
+                        Notifications.show('Informe um código', 'info');
+                        return;
+                    }
                     const p = App.state.inventory.find(i => Utils.cleanId(i.COD) === Utils.cleanId(code)) || { NOM: 'AVULSO' };
                     const copies = parseInt(document.getElementById('etq-print-qty').value) || 1;
+                    const validity = App.state.selectedExpiry;
+                    
                     for(let i=0; i<copies; i++) {
                         await push(ref(db, 'print_queue'), {
-                            codigo: code, nome: p.NOM, val: document.getElementById('etq-val').value,
+                            codigo: code, nome: p.NOM, val: validity,
                             qty: 1, qtyItems: document.getElementById('etq-items-qty').value, 
                             rua: Utils.formatCoord(p.RUA || '-'), rck: Utils.formatCoord(p.RCK || '-'),
                             lin: p.LIN || '-', col: p.COL || '-'
@@ -368,12 +583,13 @@
                     }
                     Notifications.show(`${copies} etiquetas adicionadas`, 'success');
                     document.getElementById('etq-in').value = '';
+                    document.getElementById('etq-name').innerText = '';
                 },
 
                 async addLabelBatch() {
                     const text = document.getElementById('etq-batch').value;
                     const lines = text.split('\n').filter(l => l.trim());
-                    const validity = document.getElementById('etq-val').value;
+                    const validity = App.state.selectedExpiryBatch || '';
 
                     for (let line of lines) {
                         const parts = line.trim().split(/\s+/);
@@ -439,7 +655,6 @@
 
                                 const addr = `${Utils.sanitizeText(it.rua)}.${Utils.sanitizeText(it.rck)}.${it.lin}/${it.col}`;
                                 
-                                // Bloco do Produto
                                 zpl += `^FO20,${y}^A0N,60,50^FD${Utils.cleanId(it.codigo)}^FS\n`;
                                 if (it.val) zpl += `^FO220,${y-5}^GB240,45,45^FS^FO230,${y}^A0N,40,35^FR^FD${it.val}^FS\n`;
                                 if (it.qtyItems) zpl += `^FO480,${y}^A0N,55,50^FDQ:${it.qtyItems}^FS\n`;
@@ -447,10 +662,8 @@
                                 zpl += `^FO20,${y + 65}^A0N,30,30^FB750,2,0,L,0^FD${Utils.sanitizeText(it.nome)}^FS\n`;
                                 zpl += `^FO20,${y + 130}^A0N,28,28^FD${addr}^FS\n`;
                                 
-                                // Código de barras reduzido para caber no layout vertical de 4
                                 zpl += `^BY2,3,80^FO60,${y + 170}^BCN,80,Y,N,N^FD${it.codigo}^FS\n`;
                                 
-                                // Linha separadora opcional para facilitar corte visual
                                 zpl += `^FO10,${y + 275}^GB790,1,1^FS\n`;
                             });
 
