@@ -58,7 +58,6 @@
             margin: 0 auto;
         }
 
-        /* Toast Notifications */
         .toast-container {
             position: fixed;
             top: 20px;
@@ -135,7 +134,6 @@
             animation: slideOut 0.3s ease forwards;
         }
 
-        /* Header */
         .header {
             background: var(--bg-secondary);
             border-radius: 24px;
@@ -175,7 +173,6 @@
             color: white;
         }
 
-        /* Upload Tabs */
         .upload-tabs {
             display: flex;
             gap: 8px;
@@ -202,7 +199,6 @@
             border-color: var(--accent);
         }
 
-        /* Upload Cards */
         .upload-card {
             background: var(--bg-secondary);
             border-radius: 24px;
@@ -251,7 +247,6 @@
             margin-top: 8px;
         }
 
-        /* Search Box */
         .search-box {
             background: var(--bg-secondary);
             border-radius: 20px;
@@ -313,7 +308,6 @@
             background: var(--warning);
         }
 
-        /* Scanner */
         #reader {
             width: 100%;
             border-radius: 20px;
@@ -324,7 +318,6 @@
             padding: 10px;
         }
 
-        /* Status Bar */
         .status-bar {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -359,7 +352,6 @@
             text-transform: uppercase;
         }
 
-        /* Filter Section */
         .filter-section {
             background: var(--bg-secondary);
             border-radius: 16px;
@@ -421,7 +413,6 @@
             cursor: pointer;
         }
 
-        /* Products List */
         .produtos-list {
             margin-bottom: 20px;
         }
@@ -546,7 +537,6 @@
         .badge-90 { background: #fecaca; color: #b91c1c; }
         .badge-120 { background: #fecaca; color: #7f1d1d; }
 
-        /* Modal */
         .modal {
             display: none;
             position: fixed;
@@ -622,7 +612,6 @@
             gap: 10px;
         }
 
-        /* Teclado de Data */
         .teclado-container {
             background: var(--bg-primary);
             border-radius: 20px;
@@ -720,7 +709,6 @@
             background: #d97706;
         }
 
-        /* Lotes List */
         .lotes-list {
             margin: 20px 0;
             max-height: 200px;
@@ -774,7 +762,6 @@
             background: var(--danger-dark);
         }
 
-        /* Histórico */
         .historico-list {
             max-height: 200px;
             overflow-y: auto;
@@ -1048,8 +1035,8 @@
     let abaAtual = 'xml';
     let estoqueAnterior = null;
     let filtroAtual = 'todos';
+    let origemModalAtual = 'xml';
     
-    // Variáveis do teclado de data
     let mesSelecionado = '';
     let anoSelecionado = '';
 
@@ -1144,7 +1131,7 @@
         renderizarLista();
     };
 
-    // Upload XML
+    // Upload XML - valores inteiros
     document.getElementById('xmlInput').addEventListener('change', async (e) => {
         const files = Array.from(e.target.files);
         let total = 0;
@@ -1168,11 +1155,11 @@
                     
                     let qtde = 0;
                     const qCom = prod.querySelector('qCom')?.textContent;
-                    if (qCom) qtde = parseFloat(qCom.replace(',', '.'));
+                    if (qCom) qtde = Math.floor(parseFloat(qCom.replace(',', '.')));
                     
                     if (!qtde) {
                         const qTrib = prod.querySelector('qTrib')?.textContent;
-                        if (qTrib) qtde = parseFloat(qTrib.replace(',', '.'));
+                        if (qTrib) qtde = Math.floor(parseFloat(qTrib.replace(',', '.')));
                     }
                     
                     if (qtde <= 0) continue;
@@ -1213,7 +1200,7 @@
         e.target.value = '';
     });
 
-    // ===== UPLOAD PLANILHA CORRIGIDO - SEM DUPLICAÇÃO =====
+    // Upload Planilha - valores inteiros e origem padronizada
     document.getElementById('estoqueInput').addEventListener('change', async (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -1229,7 +1216,6 @@
             const sheet = workbook.Sheets[workbook.SheetNames[0]];
             const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
             
-            // Mapa para agrupar por código (valores da planilha)
             const novosProdutos = new Map();
             
             for (let i = 1; i < rows.length; i++) {
@@ -1238,16 +1224,15 @@
                 
                 const codigo = String(row[0] || '').trim();
                 const desc = String(row[1] || '').trim();
-                const qtde = parseFloat(String(row[8] || '0').replace(',', '.')) || 0;
-                const estoqueMinimo = parseFloat(String(row[11] || '0').replace(',', '.')) || 0;
+                const qtde = Math.floor(parseFloat(String(row[8] || '0').replace(',', '.'))) || 0;
+                const estoqueMinimo = Math.floor(parseFloat(String(row[11] || '0').replace(',', '.'))) || 0;
                 
-                // Extrair endereço completo
                 const endereco = [row[4], row[5], row[6], row[7]]
                     .filter(c => c && String(c).trim())
                     .map(c => String(c).trim())
                     .join(' • ');
                 
-                if (codigo && desc) {
+                if (codigo && desc && qtde > 0) {
                     if (novosProdutos.has(codigo)) {
                         const existente = novosProdutos.get(codigo);
                         existente.qtde += qtde;
@@ -1258,13 +1243,12 @@
                             qtde: qtde,
                             endereco: endereco,
                             estoqueMinimo: estoqueMinimo,
-                            origem: 'planilha'
+                            origem: 'estoque'
                         });
                     }
                 }
             }
             
-            // Salvar snapshot para comparação
             estoqueAnterior = JSON.parse(JSON.stringify(inventario));
             
             let atualizacoes = {};
@@ -1273,13 +1257,10 @@
             let produtosNovos = 0;
             let produtosAtualizados = 0;
             
-            // ===== PROCESSAR CADA PRODUTO DA PLANILHA =====
             for (let [codigo, novoProduto] of novosProdutos) {
-                // Buscar TODOS os lotes com este código (independente da origem)
                 const existentes = Object.entries(inventario).filter(([_, item]) => item.codigo === codigo);
                 
                 if (existentes.length === 0) {
-                    // Produto novo - cria um novo lote
                     const id = `ESTOQUE_${codigo}_${Date.now()}_${produtosNovos}`.replace(/[.#$\[\]\/]/g, "_");
                     atualizacoes[id] = {
                         ...novoProduto,
@@ -1297,7 +1278,6 @@
                     };
                     produtosNovos++;
                 } else {
-                    // Produto já existe - atualizar quantidades
                     const quantidadeAntiga = existentes.reduce((acc, [_, item]) => acc + (item.qtde || 0), 0);
                     const diferenca = novoProduto.qtde - quantidadeAntiga;
                     
@@ -1306,30 +1286,37 @@
                         const dataMovimento = Date.now();
                         
                         if (tipoMovimento === 'venda') {
-                            produtosVendidos += Math.abs(diferenca);
+                            const quantidadeVenda = Math.abs(diferenca);
+                            produtosVendidos += quantidadeVenda;
                             
-                            // Distribuir a venda entre os lotes existentes
+                            let restante = quantidadeVenda;
                             for (let [id, item] of existentes) {
+                                if (restante <= 0) break;
+                                const qtdVender = Math.min(item.qtde || 0, restante);
+                                if (qtdVender <= 0) continue;
+                                
                                 const historico = item.historico || [];
                                 historico.push({
                                     data: dataMovimento,
                                     tipo: 'venda',
-                                    quantidade: -Math.abs(diferenca) / existentes.length,
+                                    quantidade: -qtdVender,
                                     origem: 'planilha'
                                 });
                                 
+                                const novaQtde = (item.qtde || 0) - qtdVender;
                                 atualizacoes[id] = {
                                     ...item,
-                                    qtde: Math.max(0, item.qtde - (Math.abs(diferenca) / existentes.length)),
+                                    qtde: novaQtde,
                                     ultimaVenda: dataMovimento,
-                                    alertaEstoque: (item.qtde - (Math.abs(diferenca) / existentes.length)) <= (item.estoqueMinimo || 0),
-                                    historico: historico
+                                    alertaEstoque: novaQtde <= (item.estoqueMinimo || 0),
+                                    historico: historico,
+                                    done: novaQtde === 0 ? true : item.done
                                 };
+                                
+                                restante -= qtdVender;
                             }
                         } else {
                             produtosRepostos += diferenca;
-                            
-                            // Adicionar nova quantidade como um lote separado
                             const id = `ESTOQUE_${codigo}_${Date.now()}_${produtosRepostos}`.replace(/[.#$\[\]\/]/g, "_");
                             atualizacoes[id] = {
                                 ...novoProduto,
@@ -1348,7 +1335,6 @@
                         produtosAtualizados++;
                     }
                     
-                    // Atualizar endereço se mudou
                     if (novoProduto.endereco && novoProduto.endereco !== 'S/E') {
                         for (let [id, item] of existentes) {
                             if (item.endereco !== novoProduto.endereco) {
@@ -1362,7 +1348,6 @@
                 }
             }
             
-            // Marcar produtos que sumiram da planilha (venderam tudo)
             for (let [id, item] of Object.entries(inventario)) {
                 if (!novosProdutos.has(item.codigo) && item.qtde > 0) {
                     produtosVendidos += item.qtde;
@@ -1386,7 +1371,6 @@
                 }
             }
             
-            // Aplicar atualizações
             if (Object.keys(atualizacoes).length > 0) {
                 await estoqueRef.update(atualizacoes);
                 
@@ -1536,7 +1520,7 @@
         }
         
         const itensPendentes = Object.entries(inventario)
-            .filter(([_, item]) => item.codigo === refCodigoGlobal && !item.done);
+            .filter(([_, item]) => item.codigo === refCodigoGlobal && !item.done && item.origem === origemModalAtual);
 
         if (itensPendentes.length === 0) {
             mostrarToast('Todos os lotes já foram processados', 'info');
@@ -1626,7 +1610,6 @@
             });
         });
         
-        // Botão GRAVAR
         const btnGravar = document.getElementById('btn-gravar-data');
         if (btnGravar) {
             const novoBtnGravar = btnGravar.cloneNode(true);
@@ -1634,7 +1617,6 @@
             novoBtnGravar.addEventListener('click', gravarData);
         }
         
-        // Botão SEM VENCIMENTO
         const btnSemVencimento = document.getElementById('btn-sem-vencimento');
         if (btnSemVencimento) {
             const novoBtnSem = btnSemVencimento.cloneNode(true);
@@ -1818,11 +1800,25 @@
         return Math.floor(quantidadeAtual / mediaDiaria);
     }
 
-    // Modal principal
+    // Modal principal - corrigido para separar XML e Planilha
     window.abrirModal = (codigo) => {
-        const lotes = Object.values(inventario).filter(i => i.codigo === codigo);
+        // Determina a origem baseado na aba atual
+        if (abaAtual === 'xml') {
+            origemModalAtual = 'xml';
+        } else {
+            origemModalAtual = 'estoque';
+        }
+        
+        // Filtra apenas os lotes do código e da origem atual (aceita tanto 'estoque' quanto 'planilha' para compatibilidade)
+        let lotes;
+        if (origemModalAtual === 'xml') {
+            lotes = Object.values(inventario).filter(i => i.codigo === codigo && i.origem === 'xml');
+        } else {
+            lotes = Object.values(inventario).filter(i => i.codigo === codigo && (i.origem === 'estoque' || i.origem === 'planilha'));
+        }
+        
         if (lotes.length === 0) {
-            mostrarToast('Produto não encontrado', 'error');
+            mostrarToast('Produto não encontrado na aba atual', 'error');
             return;
         }
 
@@ -1922,7 +1918,7 @@
             historicoList.innerHTML = '<div style="text-align:center; padding:15px;">Nenhum histórico disponível</div>';
         }
 
-        // Input com teclado de data e botões fora
+        // Input com teclado de data e botões
         document.getElementById('inputContainer').innerHTML = `
             <div style="margin: 15px 0;">
                 <label style="display: block; text-align: left; font-weight: 600; margin-bottom: 5px;">
@@ -1943,18 +1939,18 @@
                     <div class="teclado-meses">
                         <div class="teclado-label">MÊS</div>
                         <div class="meses-grid">
-                            <button type="button" class="tecla-mes" data-mes="01">JAN 1</button>
-                            <button type="button" class="tecla-mes" data-mes="02">FEV 2</button>
-                            <button type="button" class="tecla-mes" data-mes="03">MAR 3</button>
-                            <button type="button" class="tecla-mes" data-mes="04">ABR 4</button>
-                            <button type="button" class="tecla-mes" data-mes="05">MAI 5</button>
-                            <button type="button" class="tecla-mes" data-mes="06">JUN 6</button>
-                            <button type="button" class="tecla-mes" data-mes="07">JUL 7</button>
-                            <button type="button" class="tecla-mes" data-mes="08">AGO 8</button>
-                            <button type="button" class="tecla-mes" data-mes="09">SET 9</button>
-                            <button type="button" class="tecla-mes" data-mes="10">OUT 10</button>
-                            <button type="button" class="tecla-mes" data-mes="11">NOV 11</button>
-                            <button type="button" class="tecla-mes" data-mes="12">DEZ 12</button>
+                            <button type="button" class="tecla-mes" data-mes="01">JAN</button>
+                            <button type="button" class="tecla-mes" data-mes="02">FEV</button>
+                            <button type="button" class="tecla-mes" data-mes="03">MAR</button>
+                            <button type="button" class="tecla-mes" data-mes="04">ABR</button>
+                            <button type="button" class="tecla-mes" data-mes="05">MAI</button>
+                            <button type="button" class="tecla-mes" data-mes="06">JUN</button>
+                            <button type="button" class="tecla-mes" data-mes="07">JUL</button>
+                            <button type="button" class="tecla-mes" data-mes="08">AGO</button>
+                            <button type="button" class="tecla-mes" data-mes="09">SET</button>
+                            <button type="button" class="tecla-mes" data-mes="10">OUT</button>
+                            <button type="button" class="tecla-mes" data-mes="11">NOV</button>
+                            <button type="button" class="tecla-mes" data-mes="12">DEZ</button>
                         </div>
                     </div>
                     
@@ -1971,11 +1967,9 @@
             </div>
         `;
 
-        // Mostrar modal sem permitir fechar ao clicar fora
         const modal = document.getElementById('modalData');
         modal.style.display = 'flex';
         
-        // Inicializar teclado após o modal abrir
         setTimeout(() => {
             inicializarTeclado();
             document.getElementById('inputQuantidade')?.focus();
@@ -2004,7 +1998,7 @@
         const dataSalvar = "01/" + data;
         
         const itensPendentes = Object.entries(inventario)
-            .filter(([_, item]) => item.codigo === refCodigoGlobal && !item.done);
+            .filter(([_, item]) => item.codigo === refCodigoGlobal && !item.done && item.origem === origemModalAtual);
 
         if (itensPendentes.length === 0) {
             mostrarToast('Todos os lotes já têm validade', 'info');
@@ -2184,7 +2178,7 @@
         if (abaAtual === 'xml') {
             itensFiltrados = itensFiltrados.filter(item => item.origem === 'xml');
         } else {
-            itensFiltrados = itensFiltrados.filter(item => item.origem === 'estoque');
+            itensFiltrados = itensFiltrados.filter(item => item.origem === 'estoque' || item.origem === 'planilha');
         }
         
         const produtosAgrupados = new Map();
@@ -2329,10 +2323,6 @@
         document.getElementById('stat-parados').innerText = produtosParados.size;
         document.getElementById('stat-parados-90').innerText = produtosParados90.size;
     }
-
-    document.getElementById('manualCode').addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') buscarManual();
-    });
 
     console.log('Sistema de gestão de estoque iniciado!');
 </script>
