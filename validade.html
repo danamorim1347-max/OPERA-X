@@ -13,13 +13,12 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
-        /* [MESMO CSS DO ORIGINAL - MANTIDO] */
+        /* [MESMO CSS DO ANTERIOR - MANTIDO] */
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
         :root { --bg-primary: #f3f4f6; --bg-secondary: #ffffff; --text-primary: #111827; --text-secondary: #6b7280; --accent: #4f46e5; --accent-hover: #4338ca; --success: #10b981; --warning: #f59e0b; --danger: #ef4444; --danger-dark: #dc2626; --border: #e5e7eb; --card-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
         .dark-mode { --bg-primary: #111827; --bg-secondary: #1f2937; --text-primary: #f9fafb; --text-secondary: #9ca3af; --accent: #6366f1; --accent-hover: #4f46e5; --border: #374151; --card-shadow: 0 4px 6px -1px rgba(0,0,0,0.3); }
         body { background: var(--bg-primary); color: var(--text-primary); padding: 20px; transition: all 0.3s ease; }
         .container { max-width: 600px; margin: 0 auto; }
-        /* [TODO O CSS DO ORIGINAL - MANTIDO] */
         .toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
         .toast { background: var(--bg-secondary); border-radius: 12px; padding: 16px 20px; box-shadow: var(--card-shadow); display: flex; align-items: center; gap: 12px; min-width: 300px; max-width: 400px; animation: slideIn 0.3s ease forwards; border-left: 4px solid; pointer-events: auto; color: var(--text-primary); }
         .toast.success { border-left-color: var(--success); }
@@ -81,6 +80,7 @@
         .produto-item:hover { transform: translateY(-2px); box-shadow: var(--card-shadow); }
         .produto-item.pendente { border-left-color: var(--warning); background: #fffbeb; }
         .produto-item.concluido { border-left-color: var(--success); opacity: 0.7; background: #f0fdf4; }
+        .produto-item.estoque-zero { border-left-color: #9ca3af; opacity: 0.5; background: #f3f4f6; }
         .produto-item.sem-movimento-30 { border-left-color: #fbbf24; background: #fef3c7; }
         .produto-item.sem-movimento-60 { border-left-color: var(--warning); background: #fde68a; }
         .produto-item.sem-movimento-90 { border-left-color: var(--danger); background: #fee2e2; }
@@ -91,6 +91,7 @@
         .produto-status { font-size: 0.7rem; font-weight: 700; padding: 4px 10px; border-radius: 30px; white-space: nowrap; }
         .status-pendente { background: #fef3c7; color: var(--warning); }
         .status-concluido { background: #d1fae5; color: var(--success); }
+        .status-zero { background: #e5e7eb; color: #6b7280; }
         .status-parado-30 { background: #fef3c7; color: #d97706; }
         .status-parado-60 { background: #fde68a; color: #b45309; }
         .status-parado-90 { background: #fecaca; color: #b91c1c; }
@@ -177,7 +178,7 @@
 
     <div class="upload-tabs">
         <div class="upload-tab active" onclick="mudarAba('xml')">📄 XML</div>
-        <div class="upload-tab" onclick="mudarAba('estoque')">📦 PLANILHA</div>
+        <div class="upload-tab" onclick="mudarAba('planilha')">📦 PLANILHA</div>
     </div>
 
     <div id="aba-xml">
@@ -192,7 +193,7 @@
         </div>
     </div>
 
-    <div id="aba-estoque" style="display: none;">
+    <div id="aba-planilha" style="display: none;">
         <div class="upload-card">
             <div class="upload-title">📊 Importar Planilha</div>
             <label class="upload-area">
@@ -322,7 +323,6 @@
     let abaAtual = 'xml';
     let estoqueAnterior = null;
     let filtroAtual = 'todos';
-    let origemModalAtual = 'xml';
     
     let mesSelecionado = '';
     let anoSelecionado = '';
@@ -334,6 +334,13 @@
         for (let id in inventario) {
             if (inventario[id].qtde && !Number.isInteger(inventario[id].qtde)) {
                 inventario[id].qtde = Math.floor(inventario[id].qtde);
+            }
+            // Normalizar origem: se não tiver origem ou for 'estoque', considerar como 'planilha' para compatibilidade
+            if (!inventario[id].origem) {
+                inventario[id].origem = 'planilha';
+            }
+            if (inventario[id].origem === 'estoque') {
+                inventario[id].origem = 'planilha';
             }
         }
         console.log('Dados carregados:', Object.keys(inventario).length, 'itens');
@@ -351,12 +358,7 @@
         const container = document.getElementById('toastContainer');
         const toastId = 'toast_' + Date.now() + '_' + Math.random();
         
-        const icons = {
-            success: '✓',
-            error: '✗',
-            warning: '⚠',
-            info: 'ℹ'
-        };
+        const icons = { success: '✓', error: '✗', warning: '⚠', info: 'ℹ' };
         
         const toast = document.createElement('div');
         toast.className = `toast ${tipo}`;
@@ -414,7 +416,7 @@
         abaAtual = aba;
         document.querySelectorAll('.upload-tab').forEach(tab => tab.classList.remove('active'));
         document.getElementById('aba-xml').style.display = 'none';
-        document.getElementById('aba-estoque').style.display = 'none';
+        document.getElementById('aba-planilha').style.display = 'none';
         
         if (aba === 'xml') {
             document.querySelectorAll('.upload-tab')[0].classList.add('active');
@@ -422,14 +424,14 @@
             document.getElementById('filterText').innerText = 'Mostrando: APENAS PRODUTOS DE XML';
         } else {
             document.querySelectorAll('.upload-tab')[1].classList.add('active');
-            document.getElementById('aba-estoque').style.display = 'block';
+            document.getElementById('aba-planilha').style.display = 'block';
             document.getElementById('filterText').innerText = 'Mostrando: APENAS PRODUTOS DA PLANILHA';
         }
         
         renderizarLista();
     };
 
-    // Upload XML - valores inteiros
+    // Upload XML
     document.getElementById('xmlInput').addEventListener('change', async (e) => {
         const files = Array.from(e.target.files);
         let total = 0;
@@ -498,7 +500,7 @@
         e.target.value = '';
     });
 
-    // Upload Planilha - valores inteiros e sem duplicação de histórico
+    // Upload Planilha
     document.getElementById('estoqueInput').addEventListener('change', async (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -541,7 +543,7 @@
                             qtde: qtde,
                             endereco: endereco,
                             estoqueMinimo: estoqueMinimo,
-                            origem: 'estoque'
+                            origem: 'planilha'
                         });
                     }
                 }
@@ -555,11 +557,14 @@
             let produtosNovos = 0;
             let produtosAtualizados = 0;
             
+            // Filtrar apenas itens da planilha para comparação (inclui 'planilha' e também 'estoque' para compatibilidade)
+            const itensPlanilha = Object.entries(inventario).filter(([_, item]) => item.origem === 'planilha' || item.origem === 'estoque');
+            
             for (let [codigo, novoProduto] of novosProdutos) {
-                const existentes = Object.entries(inventario).filter(([_, item]) => item.codigo === codigo);
+                const existentes = itensPlanilha.filter(([_, item]) => item.codigo === codigo);
                 
                 if (existentes.length === 0) {
-                    const id = `ESTOQUE_${codigo}_${Date.now()}_${produtosNovos}`.replace(/[.#$\[\]\/]/g, "_");
+                    const id = `PLANILHA_${codigo}_${Date.now()}_${produtosNovos}`.replace(/[.#$\[\]\/]/g, "_");
                     atualizacoes[id] = {
                         ...novoProduto,
                         validade: '',
@@ -617,7 +622,7 @@
                             }
                         } else {
                             produtosRepostos += diferenca;
-                            const id = `ESTOQUE_${codigo}_${Date.now()}_${produtosRepostos}`.replace(/[.#$\[\]\/]/g, "_");
+                            const id = `PLANILHA_${codigo}_${Date.now()}_${produtosRepostos}`.replace(/[.#$\[\]\/]/g, "_");
                             atualizacoes[id] = {
                                 ...novoProduto,
                                 validade: '',
@@ -648,7 +653,8 @@
                 }
             }
             
-            for (let [id, item] of Object.entries(inventario)) {
+            // Remover produtos que sumiram da planilha (zerar estoque)
+            for (let [id, item] of itensPlanilha) {
                 if (!novosProdutos.has(item.codigo) && item.qtde > 0) {
                     produtosVendidos += item.qtde;
                     
@@ -790,17 +796,6 @@
         }
     }
 
-    function limparData() {
-        mesSelecionado = '';
-        anoSelecionado = '';
-        
-        document.querySelectorAll('.tecla-mes').forEach(btn => btn.classList.remove('selecionado'));
-        document.querySelectorAll('.tecla-ano').forEach(btn => btn.classList.remove('selecionado'));
-        
-        const inputData = document.getElementById('inputData');
-        if (inputData) inputData.value = '';
-    }
-
     function gravarData() {
         const inputData = document.getElementById('inputData');
         if (inputData && inputData.value.length === 7 && /^\d{2}\/\d{4}$/.test(inputData.value)) {
@@ -810,7 +805,7 @@
         }
     }
 
-    // Função para marcar produtos sem vencimento
+    // Marcar sem vencimento
     window.marcarSemVencimento = async () => {
         const quantidade = toInt(document.getElementById('inputQuantidade')?.value);
         
@@ -819,8 +814,15 @@
             return;
         }
         
+        // Filtra pendentes da aba atual
         const itensPendentes = Object.entries(inventario)
-            .filter(([_, item]) => item.codigo === refCodigoGlobal && !item.done && item.origem === origemModalAtual);
+            .filter(([_, item]) => {
+                if (abaAtual === 'xml') {
+                    return item.codigo === refCodigoGlobal && !item.done && item.qtde > 0 && item.origem === 'xml';
+                } else {
+                    return item.codigo === refCodigoGlobal && !item.done && item.qtde > 0 && (item.origem === 'planilha' || item.origem === 'estoque');
+                }
+            });
 
         if (itensPendentes.length === 0) {
             mostrarToast('Todos os lotes já foram processados', 'info');
@@ -1100,7 +1102,7 @@
         return Math.floor(quantidadeAtual / mediaDiaria);
     }
 
-    // Função para deduplicar histórico (usar Set baseado em data + tipo + quantidade)
+    // Função para deduplicar histórico
     function deduplicarHistorico(historico) {
         const seen = new Set();
         return historico.filter(h => {
@@ -1111,19 +1113,15 @@
         });
     }
 
-    // Modal principal
+    // Modal principal - compatível com ambas origens
     window.abrirModal = (codigo) => {
-        if (abaAtual === 'xml') {
-            origemModalAtual = 'xml';
-        } else {
-            origemModalAtual = 'estoque';
-        }
-        
+        // Filtra os lotes do código de acordo com a aba atual
         let lotes;
-        if (origemModalAtual === 'xml') {
+        if (abaAtual === 'xml') {
             lotes = Object.values(inventario).filter(i => i.codigo === codigo && i.origem === 'xml');
         } else {
-            lotes = Object.values(inventario).filter(i => i.codigo === codigo && (i.origem === 'estoque' || i.origem === 'planilha'));
+            // Na aba planilha, aceita tanto 'planilha' quanto 'estoque' (para compatibilidade com dados antigos)
+            lotes = Object.values(inventario).filter(i => i.codigo === codigo && (i.origem === 'planilha' || i.origem === 'estoque'));
         }
         
         if (lotes.length === 0) {
@@ -1134,7 +1132,7 @@
         refCodigoGlobal = codigo;
         
         const comValidade = lotes.filter(l => l.done && l.validade && l.validade !== 'SEM VENCIMENTO');
-        const pendentes = lotes.filter(l => !l.done);
+        const pendentes = lotes.filter(l => !l.done && (l.qtde || 0) > 0);
         const totalPendente = pendentes.reduce((acc, l) => acc + (l.qtde || 0), 0);
         const primeiroLote = lotes[0];
 
@@ -1147,7 +1145,6 @@
                               (primeiroLote.historico && primeiroLote.historico.length > 0 ? Math.floor((Date.now() - primeiroLote.historico[0]?.data) / 86400000) : 0);
 
         let historicoCompleto = lotes.flatMap(l => l.historico || []);
-        // Deduplicar histórico para evitar entradas duplicadas
         historicoCompleto = deduplicarHistorico(historicoCompleto);
         historicoCompleto.sort((a, b) => b.data - a.data);
         
@@ -1308,8 +1305,15 @@
 
         const dataSalvar = "01/" + data;
         
+        // Filtra pendentes da aba atual
         const itensPendentes = Object.entries(inventario)
-            .filter(([_, item]) => item.codigo === refCodigoGlobal && !item.done && item.origem === origemModalAtual);
+            .filter(([_, item]) => {
+                if (abaAtual === 'xml') {
+                    return item.codigo === refCodigoGlobal && !item.done && (item.qtde || 0) > 0 && item.origem === 'xml';
+                } else {
+                    return item.codigo === refCodigoGlobal && !item.done && (item.qtde || 0) > 0 && (item.origem === 'planilha' || item.origem === 'estoque');
+                }
+            });
 
         if (itensPendentes.length === 0) {
             mostrarToast('Todos os lotes já têm validade', 'info');
@@ -1489,7 +1493,8 @@
         if (abaAtual === 'xml') {
             itensFiltrados = itensFiltrados.filter(item => item.origem === 'xml');
         } else {
-            itensFiltrados = itensFiltrados.filter(item => item.origem === 'estoque' || item.origem === 'planilha');
+            // Na aba planilha, aceita tanto 'planilha' quanto 'estoque' (compatibilidade)
+            itensFiltrados = itensFiltrados.filter(item => item.origem === 'planilha' || item.origem === 'estoque');
         }
         
         const produtosAgrupados = new Map();
@@ -1526,8 +1531,10 @@
         if (filtroAtual !== 'todos') {
             produtos = produtos.filter(prod => {
                 switch(filtroAtual) {
-                    case 'pendente': return !prod.done;
-                    case 'concluido': return prod.done;
+                    case 'pendente': 
+                        return !prod.done && (prod.qtde || 0) > 0;
+                    case 'concluido': 
+                        return prod.done || (prod.qtde || 0) === 0;
                     case 'parado30': return prod.diasSemVenda >= 30;
                     case 'parado60': return prod.diasSemVenda >= 60;
                     case 'parado90': return prod.diasSemVenda >= 90;
@@ -1562,29 +1569,43 @@
         
         container.innerHTML = produtos.map(prod => {
             const classeMovimento = getClasseSemMovimento(prod.diasSemVenda);
-            const statusText = getStatusText(prod.diasSemVenda);
-            const statusClass = getStatusClass(prod.diasSemVenda);
-            const performanceIcon = getPerformanceIcon(prod.diasSemVenda, prod.vendasMes);
+            let statusText, statusClass;
+            const qtdeTotal = prod.qtde || 0;
             
+            if (qtdeTotal === 0) {
+                statusText = '⚪ Estoque Zerado';
+                statusClass = 'status-zero';
+            } else if (prod.done) {
+                statusText = '✅ Concluído';
+                statusClass = 'status-concluido';
+            } else if (prod.diasSemVenda >= 30) {
+                statusText = getStatusText(prod.diasSemVenda);
+                statusClass = getStatusClass(prod.diasSemVenda);
+            } else {
+                statusText = '⏳ Pendente';
+                statusClass = 'status-pendente';
+            }
+            
+            const performanceIcon = getPerformanceIcon(prod.diasSemVenda, prod.vendasMes);
             const historicoCompleto = prod.lotes.flatMap(l => l.historico || []);
-            const diasEstoque = calcularDiasEstoque(historicoCompleto, prod.qtde || 0);
+            const diasEstoque = calcularDiasEstoque(historicoCompleto, qtdeTotal);
             
             return `
-            <div class="produto-item ${prod.done ? 'concluido' : 'pendente'} ${classeMovimento}" onclick="abrirModal('${prod.codigo}')">
+            <div class="produto-item ${qtdeTotal === 0 ? 'estoque-zero' : (prod.done ? 'concluido' : 'pendente')} ${classeMovimento}" onclick="abrirModal('${prod.codigo}')">
                 <div class="produto-header">
                     <span class="produto-codigo">
                         <span class="performance-icon">${performanceIcon}</span>
                         ${prod.codigo}
                     </span>
-                    <span class="produto-status ${prod.done ? 'status-concluido' : (prod.diasSemVenda >= 30 ? statusClass : 'status-pendente')}">
-                        ${prod.done ? '✅ Concluído' : statusText}
+                    <span class="produto-status ${statusClass}">
+                        ${statusText}
                     </span>
                 </div>
                 <div class="produto-desc">${(prod.desc || '').substring(0, 50)}${prod.desc?.length > 50 ? '...' : ''}</div>
                 <div class="produto-detalhes">
                     <span><i class="fas fa-file"></i> ${prod.origem === 'xml' ? `NF ${prod.nf}` : 'Estoque'}</span>
-                    <span><i class="fas fa-box"></i> ${prod.qtde} un</span>
-                    ${diasEstoque !== '∞' ? `<span><i class="fas fa-clock"></i> ${diasEstoque}d</span>` : ''}
+                    <span><i class="fas fa-box"></i> ${qtdeTotal} un</span>
+                    ${diasEstoque !== '∞' && qtdeTotal > 0 ? `<span><i class="fas fa-clock"></i> ${diasEstoque}d</span>` : ''}
                 </div>
                 ${prod.endereco ? `
                 <div class="produto-endereco">
@@ -1592,12 +1613,12 @@
                 </div>
                 ` : ''}
                 <div class="produto-movimento">
-                    ${prod.diasSemVenda >= 30 ? `
+                    ${prod.diasSemVenda >= 30 && qtdeTotal > 0 ? `
                         <span class="badge-dias ${prod.diasSemVenda >= 90 ? 'badge-90' : (prod.diasSemVenda >= 60 ? 'badge-60' : 'badge-30')}">
                             <i class="fas fa-hourglass-half"></i> ${prod.diasSemVenda} dias
                         </span>
                     ` : ''}
-                    ${prod.alertaEstoque ? `
+                    ${prod.alertaEstoque && qtdeTotal > 0 ? `
                         <span class="badge-dias badge-90">
                             <i class="fas fa-exclamation-triangle"></i> Estoque mínimo
                         </span>
@@ -1609,6 +1630,9 @@
 
     function atualizarStatus() {
         const lotes = Object.values(inventario);
+        
+        // Pendentes: lotes sem validade E com quantidade > 0
+        const pendentes = lotes.filter(l => !l.done && (l.qtde || 0) > 0);
         
         const produtosParados = new Set();
         const produtosParados90 = new Set();
@@ -1630,7 +1654,7 @@
         });
         
         document.getElementById('stat-lotes').innerText = lotes.length;
-        document.getElementById('stat-pendentes').innerText = lotes.filter(l => !l.done).length;
+        document.getElementById('stat-pendentes').innerText = pendentes.length;
         document.getElementById('stat-parados').innerText = produtosParados.size;
         document.getElementById('stat-parados-90').innerText = produtosParados90.size;
     }
