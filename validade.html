@@ -13,862 +13,150 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Inter', sans-serif;
-        }
-
-        :root {
-            --bg-primary: #f3f4f6;
-            --bg-secondary: #ffffff;
-            --text-primary: #111827;
-            --text-secondary: #6b7280;
-            --accent: #4f46e5;
-            --accent-hover: #4338ca;
-            --success: #10b981;
-            --warning: #f59e0b;
-            --danger: #ef4444;
-            --danger-dark: #dc2626;
-            --border: #e5e7eb;
-            --card-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
-        }
-
-        .dark-mode {
-            --bg-primary: #111827;
-            --bg-secondary: #1f2937;
-            --text-primary: #f9fafb;
-            --text-secondary: #9ca3af;
-            --accent: #6366f1;
-            --accent-hover: #4f46e5;
-            --border: #374151;
-            --card-shadow: 0 4px 6px -1px rgba(0,0,0,0.3);
-        }
-
-        body {
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            padding: 20px;
-            transition: all 0.3s ease;
-        }
-
-        .container {
-            max-width: 600px;
-            margin: 0 auto;
-        }
-
-        .toast-container {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 9999;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            pointer-events: none;
-        }
-
-        .toast {
-            background: var(--bg-secondary);
-            border-radius: 12px;
-            padding: 16px 20px;
-            box-shadow: var(--card-shadow);
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            min-width: 300px;
-            max-width: 400px;
-            animation: slideIn 0.3s ease forwards;
-            border-left: 4px solid;
-            pointer-events: auto;
-            color: var(--text-primary);
-        }
-
+        /* [MESMO CSS DO ANTERIOR - MANTIDO] */
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        :root { --bg-primary: #f3f4f6; --bg-secondary: #ffffff; --text-primary: #111827; --text-secondary: #6b7280; --accent: #4f46e5; --accent-hover: #4338ca; --success: #10b981; --warning: #f59e0b; --danger: #ef4444; --danger-dark: #dc2626; --border: #e5e7eb; --card-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        .dark-mode { --bg-primary: #111827; --bg-secondary: #1f2937; --text-primary: #f9fafb; --text-secondary: #9ca3af; --accent: #6366f1; --accent-hover: #4f46e5; --border: #374151; --card-shadow: 0 4px 6px -1px rgba(0,0,0,0.3); }
+        body { background: var(--bg-primary); color: var(--text-primary); padding: 20px; transition: all 0.3s ease; }
+        .container { max-width: 600px; margin: 0 auto; }
+        .toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
+        .toast { background: var(--bg-secondary); border-radius: 12px; padding: 16px 20px; box-shadow: var(--card-shadow); display: flex; align-items: center; gap: 12px; min-width: 300px; max-width: 400px; animation: slideIn 0.3s ease forwards; border-left: 4px solid; pointer-events: auto; color: var(--text-primary); }
         .toast.success { border-left-color: var(--success); }
         .toast.error { border-left-color: var(--danger); }
         .toast.warning { border-left-color: var(--warning); }
         .toast.info { border-left-color: var(--accent); }
-
-        .toast-icon {
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 14px;
-            flex-shrink: 0;
-        }
-
+        .toast-icon { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
         .toast.success .toast-icon { background: var(--success); color: white; }
         .toast.error .toast-icon { background: var(--danger); color: white; }
         .toast.warning .toast-icon { background: var(--warning); color: white; }
         .toast.info .toast-icon { background: var(--accent); color: white; }
-
-        .toast-content {
-            flex: 1;
-            font-size: 0.95rem;
-            font-weight: 500;
-            word-break: break-word;
-        }
-
-        .toast-close {
-            color: var(--text-secondary);
-            cursor: pointer;
-            font-size: 18px;
-            flex-shrink: 0;
-        }
-
-        @keyframes slideIn {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-
-        @keyframes slideOut {
-            from { transform: translateX(0); opacity: 1; }
-            to { transform: translateX(100%); opacity: 0; }
-        }
-
-        .toast.fade-out {
-            animation: slideOut 0.3s ease forwards;
-        }
-
-        .header {
-            background: var(--bg-secondary);
-            border-radius: 24px;
-            padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: var(--card-shadow);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .header h1 {
-            font-size: 1.4rem;
-            font-weight: 800;
-            background: linear-gradient(135deg, var(--accent), #7c3aed);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .header-actions {
-            display: flex;
-            gap: 10px;
-        }
-
-        .theme-toggle, .export-btn {
-            background: var(--bg-primary);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 10px;
-            cursor: pointer;
-            color: var(--text-primary);
-            transition: all 0.2s;
-        }
-
-        .theme-toggle:hover, .export-btn:hover {
-            background: var(--accent);
-            color: white;
-        }
-
-        .upload-tabs {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 20px;
-        }
-
-        .upload-tab {
-            flex: 1;
-            padding: 14px;
-            text-align: center;
-            background: var(--bg-secondary);
-            border-radius: 16px;
-            font-weight: 700;
-            font-size: 0.9rem;
-            color: var(--text-secondary);
-            cursor: pointer;
-            transition: all 0.2s;
-            border: 1px solid var(--border);
-        }
-
-        .upload-tab.active {
-            background: var(--accent);
-            color: white;
-            border-color: var(--accent);
-        }
-
-        .upload-card {
-            background: var(--bg-secondary);
-            border-radius: 24px;
-            padding: 25px;
-            margin-bottom: 25px;
-            box-shadow: var(--card-shadow);
-        }
-
-        .upload-title {
-            font-size: 1.1rem;
-            font-weight: 700;
-            margin-bottom: 15px;
-        }
-
-        .upload-area {
-            border: 2px dashed var(--border);
-            border-radius: 20px;
-            padding: 30px 20px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.2s;
-            margin-bottom: 20px;
-        }
-
-        .upload-area:hover {
-            border-color: var(--accent);
-            background: rgba(79, 70, 229, 0.05);
-        }
-
-        .upload-area i {
-            font-size: 2.5rem;
-            display: block;
-            margin-bottom: 10px;
-            color: var(--accent);
-        }
-
-        .upload-area span {
-            font-weight: 600;
-            color: var(--accent);
-        }
-
-        .upload-area small {
-            display: block;
-            color: var(--text-secondary);
-            font-size: 0.8rem;
-            margin-top: 8px;
-        }
-
-        .search-box {
-            background: var(--bg-secondary);
-            border-radius: 20px;
-            padding: 15px;
-            margin-bottom: 20px;
-            border: 1px solid var(--border);
-        }
-
-        .search-label {
-            font-weight: 600;
-            margin-bottom: 10px;
-        }
-
-        .input-group {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-
-        .input-group input {
-            flex: 1;
-            min-width: 200px;
-            padding: 14px 16px;
-            border: 1px solid var(--border);
-            border-radius: 14px;
-            font-size: 1rem;
-            outline: none;
-            background: var(--bg-primary);
-            color: var(--text-primary);
-        }
-
-        .input-group input:focus {
-            border-color: var(--accent);
-            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
-        }
-
-        .btn-search, .btn-scanner, .btn-compare {
-            background: var(--text-primary);
-            color: white;
-            border: none;
-            padding: 0 20px;
-            border-radius: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            height: 50px;
-            min-width: 50px;
-        }
-
-        .btn-search:hover, .btn-scanner:hover, .btn-compare:hover {
-            background: var(--accent);
-        }
-
-        .btn-scanner {
-            background: var(--accent);
-        }
-
-        .btn-compare {
-            background: var(--warning);
-        }
-
-        #reader {
-            width: 100%;
-            border-radius: 20px;
-            overflow: hidden;
-            margin-bottom: 20px;
-            display: none;
-            background: var(--bg-secondary);
-            padding: 10px;
-        }
-
-        .status-bar {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-
-        .status-card {
-            background: var(--bg-secondary);
-            border-radius: 16px;
-            padding: 15px;
-            text-align: center;
-            border: 1px solid var(--border);
-            transition: transform 0.2s;
-        }
-
-        .status-card:hover {
-            transform: translateY(-2px);
-        }
-
-        .status-card b {
-            display: block;
-            font-size: 1.8rem;
-            font-weight: 800;
-            line-height: 1.2;
-        }
-
-        .status-card small {
-            color: var(--text-secondary);
-            font-size: 0.8rem;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-
-        .filter-section {
-            background: var(--bg-secondary);
-            border-radius: 16px;
-            padding: 15px;
-            margin-bottom: 20px;
-            border: 1px solid var(--border);
-        }
-
-        .filter-info {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 15px;
-        }
-
-        .filter-info span {
-            font-weight: 600;
-            color: var(--accent);
-        }
-
-        .filtros-rapidos {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-            margin-bottom: 15px;
-        }
-
-        .filtro-btn {
-            padding: 8px 12px;
-            border: 1px solid var(--border);
-            background: var(--bg-primary);
-            border-radius: 30px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            color: var(--text-primary);
-        }
-
-        .filtro-btn.active {
-            background: var(--accent);
-            color: white;
-            border-color: var(--accent);
-        }
-
-        .filtro-btn:hover {
-            background: var(--accent);
-            color: white;
-        }
-
-        .ordenar-select {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            font-weight: 500;
-            cursor: pointer;
-        }
-
-        .produtos-list {
-            margin-bottom: 20px;
-        }
-
-        .list-title {
-            font-weight: 700;
-            margin-bottom: 15px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .list-title span {
-            color: var(--text-secondary);
-            font-size: 0.9rem;
-        }
-
-        .produto-item {
-            background: var(--bg-secondary);
-            border-radius: 16px;
-            padding: 16px;
-            margin-bottom: 10px;
-            border: 1px solid var(--border);
-            cursor: pointer;
-            transition: all 0.2s;
-            border-left: 4px solid;
-            position: relative;
-        }
-
-        .produto-item:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--card-shadow);
-        }
-
+        .toast-content { flex: 1; font-size: 0.95rem; font-weight: 500; word-break: break-word; }
+        .toast-close { color: var(--text-secondary); cursor: pointer; font-size: 18px; flex-shrink: 0; }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes slideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }
+        .toast.fade-out { animation: slideOut 0.3s ease forwards; }
+        .header { background: var(--bg-secondary); border-radius: 24px; padding: 20px; margin-bottom: 20px; box-shadow: var(--card-shadow); display: flex; justify-content: space-between; align-items: center; }
+        .header h1 { font-size: 1.4rem; font-weight: 800; background: linear-gradient(135deg, var(--accent), #7c3aed); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .header-actions { display: flex; gap: 10px; }
+        .theme-toggle, .export-btn { background: var(--bg-primary); border: 1px solid var(--border); border-radius: 12px; padding: 10px; cursor: pointer; color: var(--text-primary); transition: all 0.2s; }
+        .theme-toggle:hover, .export-btn:hover { background: var(--accent); color: white; }
+        .upload-tabs { display: flex; gap: 8px; margin-bottom: 20px; }
+        .upload-tab { flex: 1; padding: 14px; text-align: center; background: var(--bg-secondary); border-radius: 16px; font-weight: 700; font-size: 0.9rem; color: var(--text-secondary); cursor: pointer; transition: all 0.2s; border: 1px solid var(--border); }
+        .upload-tab.active { background: var(--accent); color: white; border-color: var(--accent); }
+        .upload-card { background: var(--bg-secondary); border-radius: 24px; padding: 25px; margin-bottom: 25px; box-shadow: var(--card-shadow); }
+        .upload-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 15px; }
+        .upload-area { border: 2px dashed var(--border); border-radius: 20px; padding: 30px 20px; text-align: center; cursor: pointer; transition: all 0.2s; margin-bottom: 20px; }
+        .upload-area:hover { border-color: var(--accent); background: rgba(79, 70, 229, 0.05); }
+        .upload-area i { font-size: 2.5rem; display: block; margin-bottom: 10px; color: var(--accent); }
+        .upload-area span { font-weight: 600; color: var(--accent); }
+        .upload-area small { display: block; color: var(--text-secondary); font-size: 0.8rem; margin-top: 8px; }
+        .search-box { background: var(--bg-secondary); border-radius: 20px; padding: 15px; margin-bottom: 20px; border: 1px solid var(--border); }
+        .search-label { font-weight: 600; margin-bottom: 10px; }
+        .input-group { display: flex; gap: 10px; flex-wrap: wrap; }
+        .input-group input { flex: 1; min-width: 200px; padding: 14px 16px; border: 1px solid var(--border); border-radius: 14px; font-size: 1rem; outline: none; background: var(--bg-primary); color: var(--text-primary); }
+        .input-group input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); }
+        .btn-search, .btn-scanner, .btn-compare { background: var(--text-primary); color: white; border: none; padding: 0 20px; border-radius: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; height: 50px; min-width: 50px; }
+        .btn-search:hover, .btn-scanner:hover, .btn-compare:hover { background: var(--accent); }
+        .btn-scanner { background: var(--accent); }
+        .btn-compare { background: var(--warning); }
+        #reader { width: 100%; border-radius: 20px; overflow: hidden; margin-bottom: 20px; display: none; background: var(--bg-secondary); padding: 10px; }
+        .status-bar { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 20px; }
+        .status-card { background: var(--bg-secondary); border-radius: 16px; padding: 15px; text-align: center; border: 1px solid var(--border); transition: transform 0.2s; }
+        .status-card:hover { transform: translateY(-2px); }
+        .status-card b { display: block; font-size: 1.8rem; font-weight: 800; line-height: 1.2; }
+        .status-card small { color: var(--text-secondary); font-size: 0.8rem; font-weight: 600; text-transform: uppercase; }
+        .filter-section { background: var(--bg-secondary); border-radius: 16px; padding: 15px; margin-bottom: 20px; border: 1px solid var(--border); }
+        .filter-info { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; }
+        .filter-info span { font-weight: 600; color: var(--accent); }
+        .filtros-rapidos { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 15px; }
+        .filtro-btn { padding: 8px 12px; border: 1px solid var(--border); background: var(--bg-primary); border-radius: 30px; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all 0.2s; color: var(--text-primary); }
+        .filtro-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
+        .filtro-btn:hover { background: var(--accent); color: white; }
+        .ordenar-select { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 12px; background: var(--bg-primary); color: var(--text-primary); font-weight: 500; cursor: pointer; }
+        .produtos-list { margin-bottom: 20px; }
+        .list-title { font-weight: 700; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
+        .list-title span { color: var(--text-secondary); font-size: 0.9rem; }
+        .produto-item { background: var(--bg-secondary); border-radius: 16px; padding: 16px; margin-bottom: 10px; border: 1px solid var(--border); cursor: pointer; transition: all 0.2s; border-left: 4px solid; position: relative; }
+        .produto-item:hover { transform: translateY(-2px); box-shadow: var(--card-shadow); }
         .produto-item.pendente { border-left-color: var(--warning); background: #fffbeb; }
         .produto-item.concluido { border-left-color: var(--success); opacity: 0.7; background: #f0fdf4; }
+        .produto-item.estoque-zero { border-left-color: #9ca3af; opacity: 0.5; background: #f3f4f6; }
         .produto-item.sem-movimento-30 { border-left-color: #fbbf24; background: #fef3c7; }
         .produto-item.sem-movimento-60 { border-left-color: var(--warning); background: #fde68a; }
         .produto-item.sem-movimento-90 { border-left-color: var(--danger); background: #fee2e2; }
         .produto-item.sem-movimento-120 { border-left-color: var(--danger-dark); background: #fecaca; }
-
-        .produto-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 8px;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
-
-        .produto-codigo {
-            font-weight: 800;
-            font-size: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .performance-icon {
-            font-size: 1.2rem;
-        }
-
-        .produto-status {
-            font-size: 0.7rem;
-            font-weight: 700;
-            padding: 4px 10px;
-            border-radius: 30px;
-            white-space: nowrap;
-        }
-
+        .produto-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px; }
+        .produto-codigo { font-weight: 800; font-size: 1rem; display: flex; align-items: center; gap: 8px; }
+        .performance-icon { font-size: 1.2rem; }
+        .produto-status { font-size: 0.7rem; font-weight: 700; padding: 4px 10px; border-radius: 30px; white-space: nowrap; }
         .status-pendente { background: #fef3c7; color: var(--warning); }
         .status-concluido { background: #d1fae5; color: var(--success); }
+        .status-zero { background: #e5e7eb; color: #6b7280; }
         .status-parado-30 { background: #fef3c7; color: #d97706; }
         .status-parado-60 { background: #fde68a; color: #b45309; }
         .status-parado-90 { background: #fecaca; color: #b91c1c; }
         .status-parado-120 { background: #fecaca; color: #7f1d1d; font-weight: 800; }
-
-        .produto-desc {
-            font-size: 0.9rem;
-            margin-bottom: 12px;
-            word-break: break-word;
-        }
-
-        .produto-detalhes {
-            display: flex;
-            gap: 15px;
-            font-size: 0.8rem;
-            color: var(--text-secondary);
-            margin-bottom: 10px;
-            flex-wrap: wrap;
-        }
-
-        .produto-endereco {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            font-size: 0.8rem;
-            color: var(--accent);
-            font-weight: 600;
-        }
-
-        .produto-movimento {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 0.75rem;
-            margin-top: 8px;
-            padding-top: 8px;
-            border-top: 1px dashed var(--border);
-            flex-wrap: wrap;
-        }
-
-        .badge-dias {
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-size: 0.7rem;
-            font-weight: 600;
-        }
-
+        .produto-desc { font-size: 0.9rem; margin-bottom: 12px; word-break: break-word; }
+        .produto-detalhes { display: flex; gap: 15px; font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 10px; flex-wrap: wrap; }
+        .produto-endereco { display: flex; align-items: center; gap: 4px; font-size: 0.8rem; color: var(--accent); font-weight: 600; }
+        .produto-movimento { display: flex; align-items: center; gap: 8px; font-size: 0.75rem; margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--border); flex-wrap: wrap; }
+        .badge-dias { padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: 600; }
         .badge-30 { background: #fef3c7; color: #d97706; }
         .badge-60 { background: #fde68a; color: #b45309; }
         .badge-90 { background: #fecaca; color: #b91c1c; }
         .badge-120 { background: #fecaca; color: #7f1d1d; }
-
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.5);
-            z-index: 2000;
-            align-items: center;
-            justify-content: center;
-            backdrop-filter: blur(4px);
-            padding: 20px;
-        }
-
-        .modal-content {
-            background: var(--bg-secondary);
-            border-radius: 32px;
-            width: 100%;
-            max-width: 500px;
-            max-height: 90vh;
-            overflow-y: auto;
-            padding: 30px;
-            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2);
-        }
-
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 20px;
-            gap: 20px;
-        }
-
-        .modal-header h2 {
-            font-size: 1.3rem;
-            font-weight: 800;
-            word-break: break-word;
-            flex: 1;
-        }
-
-        .modal-close {
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            background: var(--bg-primary);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-            cursor: pointer;
-            transition: all 0.2s;
-            flex-shrink: 0;
-        }
-
-        .modal-close:hover {
-            background: var(--danger);
-            color: white;
-        }
-
-        .modal-info {
-            background: var(--bg-primary);
-            border-radius: 16px;
-            padding: 20px;
-            margin-bottom: 20px;
-        }
-
-        .modal-info p {
-            margin: 10px 0;
-            display: flex;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-
-        .teclado-container {
-            background: var(--bg-primary);
-            border-radius: 20px;
-            padding: 15px;
-            margin-top: 10px;
-        }
-
-        .data-input {
-            text-align: center;
-            font-size: 1.5rem;
-            font-weight: 700;
-            margin-bottom: 15px;
-            background: var(--bg-secondary);
-            cursor: pointer;
-        }
-
-        .teclado-meses, .teclado-anos {
-            margin-bottom: 15px;
-        }
-
-        .teclado-label {
-            font-size: 0.7rem;
-            font-weight: 600;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            margin-bottom: 8px;
-            text-align: center;
-        }
-
-        .meses-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 8px;
-        }
-
-        .anos-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 8px;
-            max-height: 120px;
-            overflow-y: auto;
-            padding: 5px;
-        }
-
-        .tecla-mes, .tecla-ano {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 10px 5px;
-            font-size: 0.85rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            color: var(--text-primary);
-        }
-
-        .tecla-mes:hover, .tecla-ano:hover {
-            background: var(--accent);
-            color: white;
-            transform: translateY(-2px);
-        }
-
-        .tecla-mes.selecionado, .tecla-ano.selecionado {
-            background: var(--accent);
-            color: white;
-            border-color: var(--accent);
-        }
-
-        .botoes-acao {
-            display: flex;
-            gap: 10px;
-            margin-top: 20px;
-        }
-
-        .botoes-acao .btn-salvar {
-            flex: 1;
-            margin: 0;
-            font-size: 1rem;
-            padding: 14px;
-        }
-
-        .botoes-acao .btn-salvar:first-child {
-            background: var(--success);
-        }
-
-        .botoes-acao .btn-salvar:first-child:hover {
-            background: #059669;
-        }
-
-        .botoes-acao .btn-salvar:last-child {
-            background: var(--warning);
-        }
-
-        .botoes-acao .btn-salvar:last-child:hover {
-            background: #d97706;
-        }
-
-        .lotes-list {
-            margin: 20px 0;
-            max-height: 200px;
-            overflow-y: auto;
-            border: 1px solid var(--border);
-            border-radius: 12px;
-        }
-
-        .lote-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px;
-            border-bottom: 1px solid var(--border);
-            gap: 10px;
-        }
-
-        .lote-item:last-child {
-            border-bottom: none;
-        }
-
-        .lote-info {
-            display: flex;
-            flex-direction: column;
-            flex: 1;
-        }
-
-        .lote-validade {
-            font-weight: 700;
-            color: var(--success);
-        }
-
-        .lote-qtd {
-            font-size: 0.8rem;
-            color: var(--text-secondary);
-        }
-
-        .btn-remover {
-            background: var(--danger);
-            color: white;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 8px;
-            font-size: 0.7rem;
-            cursor: pointer;
-            transition: all 0.2s;
-            flex-shrink: 0;
-        }
-
-        .btn-remover:hover {
-            background: var(--danger-dark);
-        }
-
-        .historico-list {
-            max-height: 200px;
-            overflow-y: auto;
-            background: var(--bg-primary);
-            border-radius: 12px;
-            padding: 10px;
-        }
-
-        .historico-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 8px 0;
-            border-bottom: 1px solid var(--border);
-            font-size: 0.85rem;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-
-        .historico-item:last-child {
-            border-bottom: none;
-        }
-
-        .historico-data {
-            color: var(--text-secondary);
-        }
-
-        .historico-qtd {
-            font-weight: 700;
-        }
-
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; align-items: center; justify-content: center; backdrop-filter: blur(4px); padding: 20px; }
+        .modal-content { background: var(--bg-secondary); border-radius: 32px; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; padding: 30px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2); }
+        .modal-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; gap: 20px; }
+        .modal-header h2 { font-size: 1.3rem; font-weight: 800; word-break: break-word; flex: 1; }
+        .modal-close { width: 36px; height: 36px; border-radius: 50%; background: var(--bg-primary); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; cursor: pointer; transition: all 0.2s; flex-shrink: 0; }
+        .modal-close:hover { background: var(--danger); color: white; }
+        .modal-info { background: var(--bg-primary); border-radius: 16px; padding: 20px; margin-bottom: 20px; }
+        .modal-info p { margin: 10px 0; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+        .teclado-container { background: var(--bg-primary); border-radius: 20px; padding: 15px; margin-top: 10px; }
+        .data-input { text-align: center; font-size: 1.5rem; font-weight: 700; margin-bottom: 15px; background: var(--bg-secondary); cursor: pointer; }
+        .teclado-meses, .teclado-anos { margin-bottom: 15px; }
+        .teclado-label { font-size: 0.7rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 8px; text-align: center; }
+        .meses-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+        .anos-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; max-height: 120px; overflow-y: auto; padding: 5px; }
+        .tecla-mes, .tecla-ano { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; padding: 10px 5px; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.2s; color: var(--text-primary); }
+        .tecla-mes:hover, .tecla-ano:hover { background: var(--accent); color: white; transform: translateY(-2px); }
+        .tecla-mes.selecionado, .tecla-ano.selecionado { background: var(--accent); color: white; border-color: var(--accent); }
+        .botoes-acao { display: flex; gap: 10px; margin-top: 20px; }
+        .botoes-acao .btn-salvar { flex: 1; margin: 0; font-size: 1rem; padding: 14px; }
+        .botoes-acao .btn-salvar:first-child { background: var(--success); }
+        .botoes-acao .btn-salvar:first-child:hover { background: #059669; }
+        .botoes-acao .btn-salvar:last-child { background: var(--warning); }
+        .botoes-acao .btn-salvar:last-child:hover { background: #d97706; }
+        .lotes-list { margin: 20px 0; max-height: 200px; overflow-y: auto; border: 1px solid var(--border); border-radius: 12px; }
+        .lote-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid var(--border); gap: 10px; }
+        .lote-item:last-child { border-bottom: none; }
+        .lote-info { display: flex; flex-direction: column; flex: 1; }
+        .lote-validade { font-weight: 700; color: var(--success); }
+        .lote-qtd { font-size: 0.8rem; color: var(--text-secondary); }
+        .btn-remover { background: var(--danger); color: white; border: none; padding: 6px 12px; border-radius: 8px; font-size: 0.7rem; cursor: pointer; transition: all 0.2s; flex-shrink: 0; }
+        .btn-remover:hover { background: var(--danger-dark); }
+        .historico-list { max-height: 200px; overflow-y: auto; background: var(--bg-primary); border-radius: 12px; padding: 10px; }
+        .historico-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 0.85rem; gap: 10px; flex-wrap: wrap; }
+        .historico-item:last-child { border-bottom: none; }
+        .historico-data { color: var(--text-secondary); }
+        .historico-qtd { font-weight: 700; }
         .historico-qtd.positivo { color: var(--success); }
         .historico-qtd.negativo { color: var(--danger); }
-
-        .modal-input {
-            width: 100%;
-            padding: 16px;
-            border: 2px solid var(--border);
-            border-radius: 16px;
-            font-size: 1.5rem;
-            text-align: center;
-            font-weight: 600;
-            margin: 10px 0;
-            outline: none;
-            background: var(--bg-primary);
-            color: var(--text-primary);
-        }
-
-        .modal-input:focus {
-            border-color: var(--accent);
-        }
-
-        .btn-salvar, .btn-cancelar {
-            width: 100%;
-            padding: 16px;
-            border: none;
-            border-radius: 16px;
-            font-weight: 700;
-            font-size: 1rem;
-            cursor: pointer;
-            margin: 10px 0;
-            transition: all 0.2s;
-        }
-
-        .btn-salvar {
-            background: var(--success);
-            color: white;
-        }
-
-        .btn-salvar:hover {
-            background: #059669;
-        }
-
-        .btn-cancelar {
-            background: var(--danger);
-            color: white;
-        }
-
-        .btn-cancelar:hover {
-            background: var(--danger-dark);
-        }
-
-        .dica-enter {
-            font-size: 0.75rem;
-            color: var(--text-secondary);
-            margin-top: 4px;
-            text-align: center;
-        }
-
-        @media (max-width: 640px) {
-            .container { padding: 10px; }
-            .input-group { flex-direction: column; }
-            .input-group input { width: 100%; }
-            .btn-search, .btn-scanner, .btn-compare { width: 100%; height: 50px; }
-            .toast { min-width: 250px; max-width: 300px; }
-            .status-bar { grid-template-columns: repeat(2, 1fr); }
-            .filtros-rapidos { justify-content: center; }
-            .produto-header { flex-direction: column; align-items: flex-start; }
-            .modal-content { padding: 20px; }
-            .meses-grid { grid-template-columns: repeat(3, 1fr); }
-            .anos-grid { grid-template-columns: repeat(3, 1fr); }
-        }
-
-        @media (max-width: 380px) {
-            .status-bar { grid-template-columns: 1fr; }
-            .produto-detalhes { flex-direction: column; gap: 5px; }
-        }
+        .modal-input { width: 100%; padding: 16px; border: 2px solid var(--border); border-radius: 16px; font-size: 1.5rem; text-align: center; font-weight: 600; margin: 10px 0; outline: none; background: var(--bg-primary); color: var(--text-primary); }
+        .modal-input:focus { border-color: var(--accent); }
+        .btn-salvar, .btn-cancelar { width: 100%; padding: 16px; border: none; border-radius: 16px; font-weight: 700; font-size: 1rem; cursor: pointer; margin: 10px 0; transition: all 0.2s; }
+        .btn-salvar { background: var(--success); color: white; }
+        .btn-salvar:hover { background: #059669; }
+        .btn-cancelar { background: var(--danger); color: white; }
+        .btn-cancelar:hover { background: var(--danger-dark); }
+        .dica-enter { font-size: 0.75rem; color: var(--text-secondary); margin-top: 4px; text-align: center; }
+        @media (max-width: 640px) { .container { padding: 10px; } .input-group { flex-direction: column; } .input-group input { width: 100%; } .btn-search, .btn-scanner, .btn-compare { width: 100%; height: 50px; } .toast { min-width: 250px; max-width: 300px; } .status-bar { grid-template-columns: repeat(2, 1fr); } .filtros-rapidos { justify-content: center; } .produto-header { flex-direction: column; align-items: flex-start; } .modal-content { padding: 20px; } .meses-grid { grid-template-columns: repeat(3, 1fr); } .anos-grid { grid-template-columns: repeat(3, 1fr); } }
+        @media (max-width: 380px) { .status-bar { grid-template-columns: 1fr; } .produto-detalhes { flex-direction: column; gap: 5px; } }
+        .comparacao-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid var(--border); gap: 10px; flex-wrap: wrap; }
+        .comparacao-diferenca { font-weight: 700; }
+        .diferenca-positiva { color: var(--success); }
+        .diferenca-negativa { color: var(--danger); }
     </style>
 </head>
 <body>
@@ -1043,22 +331,32 @@
     // Carregar dados
     estoqueRef.on('value', (snapshot) => {
         inventario = snapshot.val() || {};
+        // Garantir que todas as quantidades são inteiros e remover itens com qtde 0
+        for (let id in inventario) {
+            if (inventario[id].qtde && !Number.isInteger(inventario[id].qtde)) {
+                inventario[id].qtde = Math.floor(inventario[id].qtde);
+            }
+            // Se qtde for 0 e tiver validade, mantém como histórico, senão pode remover
+            if (inventario[id].qtde === 0 && !inventario[id].validade) {
+                delete inventario[id];
+            }
+        }
         console.log('Dados carregados:', Object.keys(inventario).length, 'itens');
         atualizarStatus();
         renderizarLista();
     });
+
+    // Função para garantir números inteiros
+    function toInt(value) {
+        return Math.floor(parseFloat(value) || 0);
+    }
 
     // Funções de UI
     window.mostrarToast = (mensagem, tipo = 'success') => {
         const container = document.getElementById('toastContainer');
         const toastId = 'toast_' + Date.now() + '_' + Math.random();
         
-        const icons = {
-            success: '✓',
-            error: '✗',
-            warning: '⚠',
-            info: 'ℹ'
-        };
+        const icons = { success: '✓', error: '✗', warning: '⚠', info: 'ℹ' };
         
         const toast = document.createElement('div');
         toast.className = `toast ${tipo}`;
@@ -1111,7 +409,7 @@
         mostrarToast('Tema alterado!', 'info');
     };
 
-    // Abas
+    // Abas - separação total
     window.mudarAba = (aba) => {
         abaAtual = aba;
         document.querySelectorAll('.upload-tab').forEach(tab => tab.classList.remove('active'));
@@ -1131,7 +429,7 @@
         renderizarLista();
     };
 
-    // Upload XML - valores inteiros
+    // Upload XML - apenas origem 'xml'
     document.getElementById('xmlInput').addEventListener('change', async (e) => {
         const files = Array.from(e.target.files);
         let total = 0;
@@ -1155,11 +453,11 @@
                     
                     let qtde = 0;
                     const qCom = prod.querySelector('qCom')?.textContent;
-                    if (qCom) qtde = Math.floor(parseFloat(qCom.replace(',', '.')));
+                    if (qCom) qtde = toInt(qCom.replace(',', '.'));
                     
                     if (!qtde) {
                         const qTrib = prod.querySelector('qTrib')?.textContent;
-                        if (qTrib) qtde = Math.floor(parseFloat(qTrib.replace(',', '.')));
+                        if (qTrib) qtde = toInt(qTrib.replace(',', '.'));
                     }
                     
                     if (qtde <= 0) continue;
@@ -1200,7 +498,7 @@
         e.target.value = '';
     });
 
-    // Upload Planilha - valores inteiros e origem padronizada
+    // Upload Planilha - apenas origem 'planilha'
     document.getElementById('estoqueInput').addEventListener('change', async (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -1224,8 +522,8 @@
                 
                 const codigo = String(row[0] || '').trim();
                 const desc = String(row[1] || '').trim();
-                const qtde = Math.floor(parseFloat(String(row[8] || '0').replace(',', '.'))) || 0;
-                const estoqueMinimo = Math.floor(parseFloat(String(row[11] || '0').replace(',', '.'))) || 0;
+                const qtde = toInt(String(row[8] || '0').replace(',', '.'));
+                const estoqueMinimo = toInt(String(row[11] || '0').replace(',', '.'));
                 
                 const endereco = [row[4], row[5], row[6], row[7]]
                     .filter(c => c && String(c).trim())
@@ -1243,7 +541,7 @@
                             qtde: qtde,
                             endereco: endereco,
                             estoqueMinimo: estoqueMinimo,
-                            origem: 'estoque'
+                            origem: 'planilha'
                         });
                     }
                 }
@@ -1257,11 +555,14 @@
             let produtosNovos = 0;
             let produtosAtualizados = 0;
             
+            // Filtrar apenas itens da planilha para comparação
+            const itensPlanilha = Object.entries(inventario).filter(([_, item]) => item.origem === 'planilha');
+            
             for (let [codigo, novoProduto] of novosProdutos) {
-                const existentes = Object.entries(inventario).filter(([_, item]) => item.codigo === codigo);
+                const existentes = itensPlanilha.filter(([_, item]) => item.codigo === codigo);
                 
                 if (existentes.length === 0) {
-                    const id = `ESTOQUE_${codigo}_${Date.now()}_${produtosNovos}`.replace(/[.#$\[\]\/]/g, "_");
+                    const id = `PLANILHA_${codigo}_${Date.now()}_${produtosNovos}`.replace(/[.#$\[\]\/]/g, "_");
                     atualizacoes[id] = {
                         ...novoProduto,
                         validade: '',
@@ -1292,8 +593,10 @@
                             let restante = quantidadeVenda;
                             for (let [id, item] of existentes) {
                                 if (restante <= 0) break;
-                                const qtdVender = Math.min(item.qtde || 0, restante);
-                                if (qtdVender <= 0) continue;
+                                const qtdDisponivel = item.qtde || 0;
+                                if (qtdDisponivel <= 0) continue;
+                                
+                                const qtdVender = Math.min(qtdDisponivel, restante);
                                 
                                 const historico = item.historico || [];
                                 historico.push({
@@ -1303,7 +606,7 @@
                                     origem: 'planilha'
                                 });
                                 
-                                const novaQtde = (item.qtde || 0) - qtdVender;
+                                const novaQtde = qtdDisponivel - qtdVender;
                                 atualizacoes[id] = {
                                     ...item,
                                     qtde: novaQtde,
@@ -1317,7 +620,7 @@
                             }
                         } else {
                             produtosRepostos += diferenca;
-                            const id = `ESTOQUE_${codigo}_${Date.now()}_${produtosRepostos}`.replace(/[.#$\[\]\/]/g, "_");
+                            const id = `PLANILHA_${codigo}_${Date.now()}_${produtosRepostos}`.replace(/[.#$\[\]\/]/g, "_");
                             atualizacoes[id] = {
                                 ...novoProduto,
                                 validade: '',
@@ -1348,7 +651,8 @@
                 }
             }
             
-            for (let [id, item] of Object.entries(inventario)) {
+            // Remover produtos que sumiram da planilha (zerar estoque)
+            for (let [id, item] of itensPlanilha) {
                 if (!novosProdutos.has(item.codigo) && item.qtde > 0) {
                     produtosVendidos += item.qtde;
                     
@@ -1490,17 +794,6 @@
         }
     }
 
-    function limparData() {
-        mesSelecionado = '';
-        anoSelecionado = '';
-        
-        document.querySelectorAll('.tecla-mes').forEach(btn => btn.classList.remove('selecionado'));
-        document.querySelectorAll('.tecla-ano').forEach(btn => btn.classList.remove('selecionado'));
-        
-        const inputData = document.getElementById('inputData');
-        if (inputData) inputData.value = '';
-    }
-
     function gravarData() {
         const inputData = document.getElementById('inputData');
         if (inputData && inputData.value.length === 7 && /^\d{2}\/\d{4}$/.test(inputData.value)) {
@@ -1510,17 +803,17 @@
         }
     }
 
-    // Função para marcar produtos sem vencimento
+    // Marcar sem vencimento
     window.marcarSemVencimento = async () => {
-        const quantidade = parseInt(document.getElementById('inputQuantidade')?.value);
+        const quantidade = toInt(document.getElementById('inputQuantidade')?.value);
         
         if (!quantidade || quantidade <= 0) {
-            mostrarToast('Digite uma quantidade válida', 'warning');
+            mostrarToast('Digite uma quantidade válida (número inteiro)', 'warning');
             return;
         }
         
         const itensPendentes = Object.entries(inventario)
-            .filter(([_, item]) => item.codigo === refCodigoGlobal && !item.done && item.origem === origemModalAtual);
+            .filter(([_, item]) => item.codigo === refCodigoGlobal && !item.done && item.qtde > 0 && item.origem === origemModalAtual);
 
         if (itensPendentes.length === 0) {
             mostrarToast('Todos os lotes já foram processados', 'info');
@@ -1800,22 +1093,28 @@
         return Math.floor(quantidadeAtual / mediaDiaria);
     }
 
-    // Modal principal - corrigido para separar XML e Planilha
+    // Função para deduplicar histórico
+    function deduplicarHistorico(historico) {
+        const seen = new Set();
+        return historico.filter(h => {
+            const key = `${h.data}_${h.tipo}_${h.quantidade}`;
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+        });
+    }
+
+    // Modal principal - separado por origem
     window.abrirModal = (codigo) => {
-        // Determina a origem baseado na aba atual
+        // Define a origem baseado na aba atual
         if (abaAtual === 'xml') {
             origemModalAtual = 'xml';
         } else {
-            origemModalAtual = 'estoque';
+            origemModalAtual = 'planilha';
         }
         
-        // Filtra apenas os lotes do código e da origem atual (aceita tanto 'estoque' quanto 'planilha' para compatibilidade)
-        let lotes;
-        if (origemModalAtual === 'xml') {
-            lotes = Object.values(inventario).filter(i => i.codigo === codigo && i.origem === 'xml');
-        } else {
-            lotes = Object.values(inventario).filter(i => i.codigo === codigo && (i.origem === 'estoque' || i.origem === 'planilha'));
-        }
+        // Filtra apenas os lotes do código e da origem atual
+        const lotes = Object.values(inventario).filter(i => i.codigo === codigo && i.origem === origemModalAtual);
         
         if (lotes.length === 0) {
             mostrarToast('Produto não encontrado na aba atual', 'error');
@@ -1825,7 +1124,7 @@
         refCodigoGlobal = codigo;
         
         const comValidade = lotes.filter(l => l.done && l.validade && l.validade !== 'SEM VENCIMENTO');
-        const pendentes = lotes.filter(l => !l.done);
+        const pendentes = lotes.filter(l => !l.done && (l.qtde || 0) > 0);
         const totalPendente = pendentes.reduce((acc, l) => acc + (l.qtde || 0), 0);
         const primeiroLote = lotes[0];
 
@@ -1837,7 +1136,10 @@
         const diasSemVenda = ultimaVenda ? Math.floor((Date.now() - ultimaVenda) / 86400000) : 
                               (primeiroLote.historico && primeiroLote.historico.length > 0 ? Math.floor((Date.now() - primeiroLote.historico[0]?.data) / 86400000) : 0);
 
-        const historicoCompleto = lotes.flatMap(l => l.historico || []);
+        let historicoCompleto = lotes.flatMap(l => l.historico || []);
+        historicoCompleto = deduplicarHistorico(historicoCompleto);
+        historicoCompleto.sort((a, b) => b.data - a.data);
+        
         const diasEstoque = calcularDiasEstoque(historicoCompleto, lotes.reduce((acc, l) => acc + (l.qtde || 0), 0));
         
         const vendasUltimos30dias = historicoCompleto
@@ -1896,21 +1198,19 @@
         }
 
         const historicoList = document.getElementById('historicoList');
-        const todosHistoricos = lotes.flatMap(l => (l.historico || []).map(h => ({
-            ...h,
-            desc: l.desc
-        }))).sort((a, b) => b.data - a.data).slice(0, 20);
+        const todosHistoricos = historicoCompleto.slice(0, 20);
         
         if (todosHistoricos.length > 0) {
             historicoList.innerHTML = todosHistoricos.map(h => {
                 const data = new Date(h.data).toLocaleDateString('pt-BR');
                 const cor = h.tipo === 'venda' ? 'negativo' : (h.tipo === 'reposicao' ? 'positivo' : '');
                 const sinal = h.tipo === 'venda' ? '▼' : (h.tipo === 'reposicao' ? '▲' : '•');
+                const quantidade = Math.abs(h.quantidade);
                 return `
                     <div class="historico-item">
                         <span class="historico-data">${data}</span>
                         <span>${h.tipo === 'venda' ? 'Venda' : (h.tipo === 'reposicao' ? 'Reposição' : 'Importação')}</span>
-                        <span class="historico-qtd ${cor}">${sinal} ${Math.abs(h.quantidade)} un</span>
+                        <span class="historico-qtd ${cor}">${sinal} ${quantidade} un</span>
                     </div>
                 `;
             }).join('');
@@ -1925,7 +1225,7 @@
                     📦 Quantidade (disponível: <span id="qtd-disponivel">${totalPendente}</span>):
                 </label>
                 <input type="number" id="inputQuantidade" class="modal-input" 
-                       placeholder="Quantidade" min="1" max="${totalPendente}" value="${totalPendente}">
+                       placeholder="Quantidade" min="1" max="${totalPendente}" value="${totalPendente}" step="1">
             </div>
             
             <div style="margin: 15px 0;">
@@ -1977,11 +1277,11 @@
     };
 
     window.salvarData = async () => {
-        const quantidade = parseInt(document.getElementById('inputQuantidade')?.value);
+        const quantidade = toInt(document.getElementById('inputQuantidade')?.value);
         const data = document.getElementById('inputData')?.value;
         
         if (!quantidade || quantidade <= 0) {
-            mostrarToast('Digite uma quantidade válida', 'warning');
+            mostrarToast('Digite uma quantidade válida (número inteiro)', 'warning');
             return;
         }
         
@@ -1998,7 +1298,7 @@
         const dataSalvar = "01/" + data;
         
         const itensPendentes = Object.entries(inventario)
-            .filter(([_, item]) => item.codigo === refCodigoGlobal && !item.done && item.origem === origemModalAtual);
+            .filter(([_, item]) => item.codigo === refCodigoGlobal && !item.done && (item.qtde || 0) > 0 && item.origem === origemModalAtual);
 
         if (itensPendentes.length === 0) {
             mostrarToast('Todos os lotes já têm validade', 'info');
@@ -2178,7 +1478,7 @@
         if (abaAtual === 'xml') {
             itensFiltrados = itensFiltrados.filter(item => item.origem === 'xml');
         } else {
-            itensFiltrados = itensFiltrados.filter(item => item.origem === 'estoque' || item.origem === 'planilha');
+            itensFiltrados = itensFiltrados.filter(item => item.origem === 'planilha');
         }
         
         const produtosAgrupados = new Map();
@@ -2215,8 +1515,10 @@
         if (filtroAtual !== 'todos') {
             produtos = produtos.filter(prod => {
                 switch(filtroAtual) {
-                    case 'pendente': return !prod.done;
-                    case 'concluido': return prod.done;
+                    case 'pendente': 
+                        return !prod.done && (prod.qtde || 0) > 0;
+                    case 'concluido': 
+                        return prod.done || (prod.qtde || 0) === 0;
                     case 'parado30': return prod.diasSemVenda >= 30;
                     case 'parado60': return prod.diasSemVenda >= 60;
                     case 'parado90': return prod.diasSemVenda >= 90;
@@ -2251,29 +1553,43 @@
         
         container.innerHTML = produtos.map(prod => {
             const classeMovimento = getClasseSemMovimento(prod.diasSemVenda);
-            const statusText = getStatusText(prod.diasSemVenda);
-            const statusClass = getStatusClass(prod.diasSemVenda);
-            const performanceIcon = getPerformanceIcon(prod.diasSemVenda, prod.vendasMes);
+            let statusText, statusClass;
+            const qtdeTotal = prod.qtde || 0;
             
+            if (qtdeTotal === 0) {
+                statusText = '⚪ Estoque Zerado';
+                statusClass = 'status-zero';
+            } else if (prod.done) {
+                statusText = '✅ Concluído';
+                statusClass = 'status-concluido';
+            } else if (prod.diasSemVenda >= 30) {
+                statusText = getStatusText(prod.diasSemVenda);
+                statusClass = getStatusClass(prod.diasSemVenda);
+            } else {
+                statusText = '⏳ Pendente';
+                statusClass = 'status-pendente';
+            }
+            
+            const performanceIcon = getPerformanceIcon(prod.diasSemVenda, prod.vendasMes);
             const historicoCompleto = prod.lotes.flatMap(l => l.historico || []);
-            const diasEstoque = calcularDiasEstoque(historicoCompleto, prod.qtde || 0);
+            const diasEstoque = calcularDiasEstoque(historicoCompleto, qtdeTotal);
             
             return `
-            <div class="produto-item ${prod.done ? 'concluido' : 'pendente'} ${classeMovimento}" onclick="abrirModal('${prod.codigo}')">
+            <div class="produto-item ${qtdeTotal === 0 ? 'estoque-zero' : (prod.done ? 'concluido' : 'pendente')} ${classeMovimento}" onclick="abrirModal('${prod.codigo}')">
                 <div class="produto-header">
                     <span class="produto-codigo">
                         <span class="performance-icon">${performanceIcon}</span>
                         ${prod.codigo}
                     </span>
-                    <span class="produto-status ${prod.done ? 'status-concluido' : (prod.diasSemVenda >= 30 ? statusClass : 'status-pendente')}">
-                        ${prod.done ? '✅ Concluído' : statusText}
+                    <span class="produto-status ${statusClass}">
+                        ${statusText}
                     </span>
                 </div>
                 <div class="produto-desc">${(prod.desc || '').substring(0, 50)}${prod.desc?.length > 50 ? '...' : ''}</div>
                 <div class="produto-detalhes">
                     <span><i class="fas fa-file"></i> ${prod.origem === 'xml' ? `NF ${prod.nf}` : 'Estoque'}</span>
-                    <span><i class="fas fa-box"></i> ${prod.qtde} un</span>
-                    ${diasEstoque !== '∞' ? `<span><i class="fas fa-clock"></i> ${diasEstoque}d</span>` : ''}
+                    <span><i class="fas fa-box"></i> ${qtdeTotal} un</span>
+                    ${diasEstoque !== '∞' && qtdeTotal > 0 ? `<span><i class="fas fa-clock"></i> ${diasEstoque}d</span>` : ''}
                 </div>
                 ${prod.endereco ? `
                 <div class="produto-endereco">
@@ -2281,12 +1597,12 @@
                 </div>
                 ` : ''}
                 <div class="produto-movimento">
-                    ${prod.diasSemVenda >= 30 ? `
+                    ${prod.diasSemVenda >= 30 && qtdeTotal > 0 ? `
                         <span class="badge-dias ${prod.diasSemVenda >= 90 ? 'badge-90' : (prod.diasSemVenda >= 60 ? 'badge-60' : 'badge-30')}">
                             <i class="fas fa-hourglass-half"></i> ${prod.diasSemVenda} dias
                         </span>
                     ` : ''}
-                    ${prod.alertaEstoque ? `
+                    ${prod.alertaEstoque && qtdeTotal > 0 ? `
                         <span class="badge-dias badge-90">
                             <i class="fas fa-exclamation-triangle"></i> Estoque mínimo
                         </span>
@@ -2298,6 +1614,9 @@
 
     function atualizarStatus() {
         const lotes = Object.values(inventario);
+        
+        // Pendentes: lotes sem validade E com quantidade > 0
+        const pendentes = lotes.filter(l => !l.done && (l.qtde || 0) > 0);
         
         const produtosParados = new Set();
         const produtosParados90 = new Set();
@@ -2319,29 +1638,12 @@
         });
         
         document.getElementById('stat-lotes').innerText = lotes.length;
-        document.getElementById('stat-pendentes').innerText = lotes.filter(l => !l.done).length;
+        document.getElementById('stat-pendentes').innerText = pendentes.length;
         document.getElementById('stat-parados').innerText = produtosParados.size;
         document.getElementById('stat-parados-90').innerText = produtosParados90.size;
     }
 
     console.log('Sistema de gestão de estoque iniciado!');
 </script>
-
-<style>
-    .comparacao-item {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 12px;
-        border-bottom: 1px solid var(--border);
-        gap: 10px;
-        flex-wrap: wrap;
-    }
-    .comparacao-diferenca {
-        font-weight: 700;
-    }
-    .diferenca-positiva { color: var(--success); }
-    .diferenca-negativa { color: var(--danger); }
-</style>
 </body>
 </html>
