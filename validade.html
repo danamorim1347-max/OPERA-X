@@ -364,7 +364,7 @@
         }
 
         .metric-card.vencido .value { color: var(--expired); }
-        .metric-card.critico .value { color: var(--critical); }
+        .metric-card.critico .value { color: var(--danger); }
         .metric-card.seis-meses .value { color: var(--six-months); }
         .metric-card.pendente .value { color: var(--warning); }
         .metric-card.parado30 .value { color: var(--sem-mov-30); }
@@ -394,7 +394,7 @@
         }
 
         .top-card.criticos h3 { color: var(--danger); }
-        .top-card.seis-meses h3 { color: var(--six-months); }
+        .top-card.parados h3 { color: var(--warning); }
 
         .top-list {
             display: grid;
@@ -435,8 +435,8 @@
             color: white;
         }
 
-        .top-card.seis-meses .top-position {
-            background: var(--six-months);
+        .top-card.parados .top-position {
+            background: var(--warning);
             color: white;
         }
 
@@ -485,7 +485,7 @@
         }
 
         .progress-fill {
-            background: var(--six-months);
+            background: var(--warning);
             border-radius: 4px;
             height: 4px;
         }
@@ -567,7 +567,7 @@
         }
 
         .produto-item-modal.vencido { border-left-color: var(--expired); }
-        .produto-item-modal.critico { border-left-color: var(--critical); }
+        .produto-item-modal.critico { border-left-color: var(--danger); }
         .produto-item-modal.seis-meses { border-left-color: var(--six-months); }
         .produto-item-modal.pendente { border-left-color: var(--warning); }
         .produto-item-modal.parado30 { border-left-color: var(--sem-mov-30); }
@@ -800,7 +800,7 @@
         </div>
 
         <div class="metric-card clickable critico" onclick="mostrarListaProdutos('critico')">
-            <div class="label"><i class="fas fa-exclamation-triangle"></i> Críticos (≤30d)</div>
+            <div class="label"><i class="fas fa-exclamation-triangle"></i> Críticos (≤60d)</div>
             <div class="value" id="total-criticos">0</div>
             <div class="sub">SKUs</div>
         </div>
@@ -808,20 +808,20 @@
         <div class="metric-card clickable seis-meses" onclick="mostrarListaProdutos('seis-meses')">
             <div class="label"><i class="fas fa-calendar-week"></i> Vence em ≤6 meses</div>
             <div class="value" id="total-seis-meses">0</div>
-            <div class="sub">SKUs (31-180 dias)</div>
+            <div class="sub">SKUs (61-180 dias)</div>
         </div>
     </div>
 
     <!-- Top 10 - Dois cards lado a lado -->
     <div class="top-container">
         <div class="top-card criticos">
-            <h3><i class="fas fa-fire"></i> Top 10 - Mais Críticos (≤30 dias / Vencidos)</h3>
+            <h3><i class="fas fa-fire"></i> Top 10 - Mais Críticos (≤60 dias para vencer)</h3>
             <div id="topCriticos" class="top-list"></div>
         </div>
         
-        <div class="top-card seis-meses">
-            <h3><i class="fas fa-calendar-week"></i> Top 10 - Vencem em 31 a 180 dias</h3>
-            <div id="topSeisMeses" class="top-list"></div>
+        <div class="top-card parados">
+            <h3><i class="fas fa-hourglass-half"></i> Top 10 - Mais Parados</h3>
+            <div id="topParados" class="top-list"></div>
         </div>
     </div>
 </div>
@@ -1007,7 +1007,7 @@
         
         atualizarMetricas();
         renderizarTopCriticos();
-        renderizarTopSeisMeses();
+        renderizarTopParados();
         calcularSaudeEstoque();
     }
     
@@ -1021,9 +1021,10 @@
         const parados30 = todosProdutos.filter(p => p.diasSemVenda >= 30 && p.diasSemVenda < 999).length;
         const parados90 = todosProdutos.filter(p => p.diasSemVenda >= 90 && p.diasSemVenda < 999).length;
         const vencidos = produtosComValidade.filter(p => p.menorDias !== null && p.menorDias < 0).length;
-        const criticos = produtosComValidade.filter(p => p.menorDias !== null && p.menorDias >= 0 && p.menorDias <= 30).length;
-        // Seis meses: produtos com validade entre 31 e 180 dias (exclui críticos)
-        const seisMeses = produtosComValidade.filter(p => p.menorDias !== null && p.menorDias >= 31 && p.menorDias <= 180).length;
+        // Críticos: produtos com validade entre 0 e 60 dias (exclui vencidos)
+        const criticos = produtosComValidade.filter(p => p.menorDias !== null && p.menorDias >= 0 && p.menorDias <= 60).length;
+        // Seis meses: produtos com validade entre 61 e 180 dias
+        const seisMeses = produtosComValidade.filter(p => p.menorDias !== null && p.menorDias >= 61 && p.menorDias <= 180).length;
         
         document.getElementById('total-estoque').innerText = Math.round(totalUnidades);
         document.getElementById('total-produtos').innerText = totalProdutos;
@@ -1080,56 +1081,65 @@
         }
     }
     
-    // Top 10 - Mais Críticos (Vencidos + até 30 dias)
+    // Top 10 - Mais Críticos (até 60 dias, NÃO inclui vencidos)
     function renderizarTopCriticos() {
         const topList = document.getElementById('topCriticos');
         const criticos = produtosComValidade
-            .filter(p => p.menorDias !== null && p.menorDias <= 30)
+            .filter(p => p.menorDias !== null && p.menorDias >= 0 && p.menorDias <= 60)
             .sort((a, b) => a.menorDias - b.menorDias)
             .slice(0, 10);
         
         if (criticos.length > 0) {
             topList.innerHTML = criticos.map((p, index) => {
-                const statusText = p.menorDias < 0 ? 'VENCIDO' : p.menorDias + ' dias';
-                return `<div class="top-item" onclick="abrirModalProduto('${p.codigo}')">
-                    <div class="top-position">${index + 1}</div>
-                    <div class="top-info">
-                        <h4>${p.desc.substring(0, 40)}${p.desc.length > 40 ? '...' : ''}</h4>
-                        <p>Cód: ${p.codigo} • ${Math.round(p.total)} un • ${p.endereco}</p>
-                    </div>
-                    <div class="top-value">${statusText}</div>
-                </div>`;
-            }).join('');
-        } else {
-            topList.innerHTML = '<div class="empty">Nenhum produto crítico</div>';
-        }
-    }
-    
-    // Top 10 - Vence em 31 a 180 dias
-    function renderizarTopSeisMeses() {
-        const topList = document.getElementById('topSeisMeses');
-        const seisMeses = produtosComValidade
-            .filter(p => p.menorDias !== null && p.menorDias >= 31 && p.menorDias <= 180)
-            .sort((a, b) => a.menorDias - b.menorDias)
-            .slice(0, 10);
-        
-        if (seisMeses.length > 0) {
-            topList.innerHTML = seisMeses.map((p, index) => {
-                const percent = ((180 - p.menorDias) / 180) * 100;
+                const percent = ((60 - p.menorDias) / 60) * 100;
                 return `<div class="top-item" onclick="abrirModalProduto('${p.codigo}')">
                     <div class="top-position">${index + 1}</div>
                     <div class="top-info">
                         <h4>${p.desc.substring(0, 40)}${p.desc.length > 40 ? '...' : ''}</h4>
                         <p>Cód: ${p.codigo} • ${Math.round(p.total)} un • ${p.endereco}</p>
                         <div class="progress-bar">
-                            <div class="progress-fill" style="width: ${percent}%"></div>
+                            <div class="progress-fill" style="width: ${percent}%; background: var(--danger);"></div>
                         </div>
                     </div>
                     <div class="top-value">${p.menorDias} dias</div>
                 </div>`;
             }).join('');
         } else {
-            topList.innerHTML = '<div class="empty">Nenhum produto vence nos próximos 6 meses</div>';
+            topList.innerHTML = '<div class="empty">Nenhum produto com menos de 60 dias para vencer</div>';
+        }
+    }
+    
+    // Top 10 - Mais Parados (maior tempo sem venda)
+    function renderizarTopParados() {
+        const topList = document.getElementById('topParados');
+        const parados = todosProdutos
+            .filter(p => p.diasSemVenda >= 30 && p.diasSemVenda < 999)
+            .sort((a, b) => b.diasSemVenda - a.diasSemVenda)
+            .slice(0, 10);
+        
+        if (parados.length > 0) {
+            topList.innerHTML = parados.map((p, index) => {
+                let statusText = p.diasSemVenda + ' dias';
+                let corStatus = '';
+                if (p.diasSemVenda >= 90) corStatus = 'var(--danger)';
+                else if (p.diasSemVenda >= 60) corStatus = 'var(--warning)';
+                else corStatus = 'var(--sem-mov-30)';
+                
+                const percent = Math.min(100, (p.diasSemVenda / 180) * 100);
+                return `<div class="top-item" onclick="abrirModalProduto('${p.codigo}')">
+                    <div class="top-position">${index + 1}</div>
+                    <div class="top-info">
+                        <h4>${p.desc.substring(0, 40)}${p.desc.length > 40 ? '...' : ''}</h4>
+                        <p>Cód: ${p.codigo} • ${Math.round(p.total)} un • ${p.endereco}</p>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${percent}%; background: ${corStatus};"></div>
+                        </div>
+                    </div>
+                    <div class="top-value" style="color: ${corStatus};">${statusText}</div>
+                </div>`;
+            }).join('');
+        } else {
+            topList.innerHTML = '<div class="empty">Nenhum produto parado há mais de 30 dias</div>';
         }
     }
     
@@ -1142,13 +1152,14 @@
                 classe = 'vencido'; 
                 break;
             case 'critico': 
-                titulo = 'Produtos Críticos (≤30 dias para vencer)'; 
-                lista = produtosComValidade.filter(p => p.menorDias !== null && p.menorDias >= 0 && p.menorDias <= 30); 
+                titulo = 'Produtos Críticos (≤60 dias para vencer)'; 
+                lista = produtosComValidade.filter(p => p.menorDias !== null && p.menorDias >= 0 && p.menorDias <= 60)
+                    .sort((a, b) => a.menorDias - b.menorDias); 
                 classe = 'critico'; 
                 break;
             case 'seis-meses': 
-                titulo = 'Produtos que Vencem em até 6 meses (31-180 dias)'; 
-                lista = produtosComValidade.filter(p => p.menorDias !== null && p.menorDias >= 31 && p.menorDias <= 180)
+                titulo = 'Produtos que Vencem em até 6 meses (61-180 dias)'; 
+                lista = produtosComValidade.filter(p => p.menorDias !== null && p.menorDias >= 61 && p.menorDias <= 180)
                     .sort((a, b) => a.menorDias - b.menorDias); 
                 classe = 'seis-meses'; 
                 break;
@@ -1159,12 +1170,14 @@
                 break;
             case 'parado30': 
                 titulo = 'Produtos Parados 30d+'; 
-                lista = todosProdutos.filter(p => p.diasSemVenda >= 30 && p.diasSemVenda < 999); 
+                lista = todosProdutos.filter(p => p.diasSemVenda >= 30 && p.diasSemVenda < 999)
+                    .sort((a, b) => b.diasSemVenda - a.diasSemVenda); 
                 classe = 'parado30'; 
                 break;
             case 'parado90': 
                 titulo = 'Produtos Parados 90d+'; 
-                lista = todosProdutos.filter(p => p.diasSemVenda >= 90 && p.diasSemVenda < 999); 
+                lista = todosProdutos.filter(p => p.diasSemVenda >= 90 && p.diasSemVenda < 999)
+                    .sort((a, b) => b.diasSemVenda - a.diasSemVenda); 
                 classe = 'parado90'; 
                 break;
             case 'com-endereco': 
@@ -1192,8 +1205,10 @@
                 let classeItem = '';
                 if (p.menorDias !== null) {
                     if (p.menorDias < 0) classeItem = 'vencido';
-                    else if (p.menorDias <= 30) classeItem = 'critico';
+                    else if (p.menorDias <= 60) classeItem = 'critico';
                     else if (p.menorDias <= 180) classeItem = 'seis-meses';
+                } else if (p.diasSemVenda >= 30) {
+                    classeItem = 'parado30';
                 } else {
                     classeItem = classe;
                 }
@@ -1242,9 +1257,9 @@
             if (produto.menorDias < 0) { 
                 statusText = 'VENCIDO'; 
                 statusColor = 'var(--expired)'; 
-            } else if (produto.menorDias <= 30) { 
+            } else if (produto.menorDias <= 60) { 
                 statusText = `${produto.menorDias} dias restantes (CRÍTICO)`; 
-                statusColor = 'var(--critical)'; 
+                statusColor = 'var(--danger)'; 
             } else if (produto.menorDias <= 180) { 
                 statusText = `${produto.menorDias} dias restantes`; 
                 statusColor = 'var(--six-months)'; 
@@ -1282,7 +1297,7 @@
                         let cor = '';
                         if (diff !== null) { 
                             if (diff < 0) cor = 'var(--expired)'; 
-                            else if (diff <= 30) cor = 'var(--critical)'; 
+                            else if (diff <= 60) cor = 'var(--danger)'; 
                             else if (diff <= 180) cor = 'var(--six-months)'; 
                             else cor = 'var(--success)'; 
                         }
@@ -1354,37 +1369,36 @@
         doc.text(`Produtos distintos: ${totalProdutos} SKUs`, 25, 62);
         doc.text(`Com endereço: ${totalComEndereco} | Sem endereço: ${totalSemEndereco}`, 25, 69);
         doc.text(`Pendentes: ${totalPendentes} | Vencidos: ${totalVencidos}`, 25, 76);
-        doc.text(`Críticos (≤30d): ${totalCriticos} | Vencem ≤6m: ${totalSeisMeses}`, 25, 83);
+        doc.text(`Críticos (≤60d): ${totalCriticos} | Vencem ≤6m: ${totalSeisMeses}`, 25, 83);
         doc.text(`Parados 30d+: ${totalParados30} | Parados 90d+: ${totalParados90}`, 25, 90);
         
         let y = 110;
         
         // Top 10 Críticos
-        const criticos = produtosComValidade.filter(p => p.menorDias !== null && p.menorDias <= 30).slice(0, 10);
+        const criticos = produtosComValidade.filter(p => p.menorDias !== null && p.menorDias >= 0 && p.menorDias <= 60).slice(0, 10);
         if (criticos.length > 0) {
             doc.setFontSize(11);
-            doc.text('Top 10 - Mais Críticos:', 20, y);
+            doc.text('Top 10 - Mais Críticos (≤60 dias):', 20, y);
             y += 7;
             criticos.forEach((p, i) => {
                 if (y > 270) { doc.addPage(); y = 20; }
                 doc.setFontSize(8);
-                const status = p.menorDias < 0 ? 'VENCIDO' : p.menorDias + 'd';
-                doc.text(`${i+1}. ${p.desc.substring(0, 35)} - ${status}`, 25, y);
+                doc.text(`${i+1}. ${p.desc.substring(0, 35)} - ${p.menorDias}d`, 25, y);
                 y += 5;
             });
             y += 5;
         }
         
-        // Top 10 6 meses
-        const seisMeses = produtosComValidade.filter(p => p.menorDias !== null && p.menorDias >= 31 && p.menorDias <= 180).slice(0, 10);
-        if (seisMeses.length > 0) {
+        // Top 10 Parados
+        const parados = todosProdutos.filter(p => p.diasSemVenda >= 30 && p.diasSemVenda < 999).slice(0, 10);
+        if (parados.length > 0) {
             doc.setFontSize(11);
-            doc.text('Top 10 - Vencem em 31-180 dias:', 20, y);
+            doc.text('Top 10 - Mais Parados:', 20, y);
             y += 7;
-            seisMeses.forEach((p, i) => {
+            parados.forEach((p, i) => {
                 if (y > 270) { doc.addPage(); y = 20; }
                 doc.setFontSize(8);
-                doc.text(`${i+1}. ${p.desc.substring(0, 35)} - ${p.menorDias}d`, 25, y);
+                doc.text(`${i+1}. ${p.desc.substring(0, 35)} - ${p.diasSemVenda}d sem venda`, 25, y);
                 y += 5;
             });
         }
@@ -1399,7 +1413,7 @@
             let categoria = '';
             if (produto.menorDias !== null) {
                 if (produto.menorDias < 0) categoria = 'Vencido';
-                else if (produto.menorDias <= 30) categoria = 'Crítico';
+                else if (produto.menorDias <= 60) categoria = 'Crítico (≤60d)';
                 else if (produto.menorDias <= 180) categoria = '6 meses';
                 else if (produto.menorDias <= 365) categoria = 'Normal';
                 else categoria = 'Longa duração';
