@@ -9,7 +9,7 @@ Sistema completo para gestão de estoque e logística.
 - 📊 Dashboard de performance separado
 
 ## Acesse
-👉 [https://danamorim1347-max.github.io/zpl/](https://danamorim1347-max.github.io/zpl/)
+👉 (https://github.com/danamorim1347-max/OPERA-X)
 
 ## Tecnologias
 - HTML5 / CSS3 / Tailwind CSS
