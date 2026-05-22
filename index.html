@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>OPERA X | Smart Logistics</title>
+    <title>OPERA X | Reposição</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -34,7 +34,6 @@
         .nav-item span { font-size: 9px; font-weight: 800; text-transform: uppercase; }
         .nav-item.active { background: var(--brand); color: white; font-weight: 900; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); }
 
-        /* Estilos do Dashboard de Reposição da Planilha */
         .reposicao-er-dashboard {
             background: white;
             border-radius: 20px;
@@ -160,15 +159,8 @@
             100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
         }
 
-        .loc-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; width: 100%; }
-        .loc-card { background: var(--primary); padding: 15px 5px; border-radius: 0.75rem; text-align: center; box-shadow: 0 8px 20px rgba(251, 191, 36, 0.2); }
-        .loc-label { font-size: 10px; font-weight: 900; color: #000; text-transform: uppercase; margin-bottom: 4px; display: block; opacity: 0.7; }
-        .loc-value { font-size: 2.2rem; font-weight: 900; color: #000; line-height: 1; }
-
         .input-pro { background: #000; border: 2px solid #1e293b; color: white; border-radius: 0.75rem; font-family: 'JetBrains Mono', monospace; text-align: center; }
-        .key { background: #000; border: 1px solid #1e293b; border-radius: 0.75rem; height: 60px; font-weight: 800; font-size: 1.5rem; color: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; }
-        .key:active { background: var(--brand); }
-
+        
         .simple-list-item { background: var(--surface); border-radius: 0.75rem; padding: 12px; margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between; border-left: 4px solid var(--brand); }
         .simple-list-code { font-family: 'JetBrains Mono', monospace; font-weight: 800; color: var(--brand); font-size: 1.1rem; }
         .simple-list-qty { background: #1e293b; padding: 4px 10px; border-radius: 20px; font-weight: 800; color: #fbbf24; }
@@ -187,8 +179,6 @@
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
-
-        .hidden-view { display: none; }
 
         @media print { 
             .no-print { display: none !important; }
@@ -229,12 +219,9 @@
             </div>
 
             <nav class="nav-bar w-full md:w-auto md:min-w-[500px]">
-                <div onclick="App.ui.setMode('locate')" id="btn-locate" class="nav-item active"><i class="fa-solid fa-magnifying-glass"></i><span>Localizar</span></div>
-                <div onclick="App.ui.setMode('labels')" id="btn-labels" class="nav-item"><i class="fa-solid fa-barcode"></i><span>Etiquetas</span></div>
-                <div onclick="App.ui.setMode('picking')" id="btn-picking" class="nav-item"><i class="fa-solid fa-truck-ramp-box"></i><span>Reposição</span></div>
-                <div onclick="window.open('/gestao-validade/', '_blank')" id="btn-validade" class="nav-item"><i class="fa-solid fa-calendar-alt"></i><span>Validade</span></div>
-                <div onclick="window.open('/dashboard-validade/', '_blank')" class="nav-item"><i class="fa-solid fa-chart-simple"></i><span>Dash Validade</span></div>
-                <div onclick="window.open('/monitor-performance/', '_blank')" class="nav-item"><i class="fa-solid fa-chart-pie"></i><span>Status</span></div>
+                <div onclick="window.location.href='/' || App.ui?.setMode?.('locate')" class="nav-item"><i class="fa-solid fa-magnifying-glass"></i><span>Localizar</span></div>
+                <div onclick="window.location.href='/etiquetas' || App.ui?.setMode?.('labels')" class="nav-item"><i class="fa-solid fa-barcode"></i><span>Etiquetas</span></div>
+                <div onclick="App.ui.setMode('picking')" id="btn-picking" class="nav-item active"><i class="fa-solid fa-truck-ramp-box"></i><span>Reposição</span></div>
             </nav>
 
             <label class="bg-slate-900 hover:bg-slate-800 text-white px-5 py-3 rounded-xl text-[10px] font-black uppercase cursor-pointer border border-slate-800 transition-all">
@@ -250,7 +237,6 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
     
     <script>
-        // Firebase Config
         const firebaseConfig = {
             apiKey: "AIzaSyCiy4DOVPYYr_UtglmnVWUdZ8SqM26Neo8",
             authDomain: "zpl47-f751d.firebaseapp.com",
@@ -260,7 +246,6 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        // Config da Planilha
         const SPREADSHEET_CONFIG = {
             ID: '1pQD4qViThkVjxsbFj8yrG7p2wdW0vuo_197hKVtvTRY',
             ABA: 'REPOSIÇÃO ABRIL26'
@@ -295,8 +280,7 @@
 
         window.App = {
             state: { 
-                mode: 'locate', 
-                labelSubMode: 'single', 
+                mode: 'picking', 
                 inventory: [], 
                 activeListener: null, 
                 reposicaoData: [], 
@@ -310,9 +294,7 @@
                     App.state.showReposicaoER = false;
                     document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
                     document.getElementById(`btn-${mode}`)?.classList.add('active');
-                    if (mode === 'locate') this.renderLocate();
-                    else if (mode === 'labels') this.renderLabels();
-                    else if (mode === 'picking') this.renderPicking();
+                    this.renderPicking();
                     this.syncQueues();
                 },
 
@@ -323,64 +305,6 @@
                     const perc = ((addr / total) * 100).toFixed(1);
                     document.getElementById('dash-fill').style.width = `${perc}%`;
                     document.getElementById('dash-perc').innerText = `${perc}%`;
-                },
-
-                renderLocate() {
-                    document.getElementById('main-view').innerHTML = `
-                        <div class="max-w-2xl mx-auto glass p-8">
-                            <input type="text" id="main-in" class="input-pro w-full py-5 text-4xl font-bold mb-8" placeholder="BIPAR CÓDIGO">
-                            <div id="result-area" class="min-h-[260px] flex flex-col items-center justify-center text-center"></div>
-                            <div id="keyboard" class="grid grid-cols-3 gap-3 mt-8 border-t border-white/10 pt-8"></div>
-                        </div>`;
-                    this.initKeyboard();
-                },
-
-                initKeyboard() {
-                    const kb = document.getElementById('keyboard');
-                    [1,2,3,4,5,6,7,8,9,'⌫',0,'CLR'].forEach(k => {
-                        const b = document.createElement('div'); b.className = 'key'; b.textContent = k;
-                        b.onclick = () => {
-                            const i = document.getElementById('main-in');
-                            if(k === '⌫') i.value = i.value.slice(0,-1); else if(k === 'CLR') i.value = ''; else i.value += k;
-                            App.logic.processLocate(i.value);
-                        };
-                        kb.appendChild(b);
-                    });
-                },
-
-                renderLabels() {
-                    const isBatch = App.state.labelSubMode === 'batch';
-                    document.getElementById('main-view').innerHTML = `
-                        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                            <div class="lg:col-span-4 glass p-8 space-y-4 h-fit">
-                                <div class="flex gap-2 p-1 bg-black/40 rounded-xl mb-4">
-                                    <button onclick="App.logic.setLabelSubMode('single')" class="flex-1 py-2 text-[10px] font-black uppercase rounded-lg transition-all ${!isBatch ? 'bg-blue-600 text-white' : 'text-slate-500 hover:text-white'}">Individual</button>
-                                    <button onclick="App.logic.setLabelSubMode('batch')" class="flex-1 py-2 text-[10px] font-black uppercase rounded-lg transition-all ${isBatch ? 'bg-blue-600 text-white' : 'text-slate-500 hover:text-white'}">Lote</button>
-                                </div>
-
-                                <h3 class="text-blue-500 font-black uppercase text-xs">${isBatch ? 'Geração em Lote' : 'Etiqueta Individual'}</h3>
-                                
-                                ${!isBatch ? `
-                                    <input type="text" id="etq-in" class="input-pro w-full py-4 font-bold" placeholder="Código" oninput="App.logic.lookupProduct(this.value)">
-                                    <div id="etq-name" class="text-center font-bold text-blue-400 text-sm h-10 uppercase"></div>
-                                    <div class="grid grid-cols-2 gap-3">
-                                        <div><span class="text-[10px] text-slate-500 font-bold uppercase">Cópias</span><input type="number" id="etq-print-qty" class="input-pro w-full p-3 text-xs font-bold" value="1"></div>
-                                        <div><span class="text-[10px] text-slate-500 font-bold uppercase">Qtd Itens</span><input type="text" id="etq-items-qty" class="input-pro w-full p-3 text-xs font-bold" placeholder="Opcional"></div>
-                                    </div>
-                                    <button onclick="App.logic.addLabel()" class="w-full bg-blue-600 text-white py-5 rounded-2xl font-black uppercase shadow-lg">Adicionar</button>
-                                ` : `
-                                    <textarea id="etq-batch" class="input-pro w-full h-48 p-3 text-left text-xs" placeholder="Código Qtd&#10;Ex:&#10;78945 3&#10;12345"></textarea>
-                                    <button onclick="App.logic.addLabelBatch()" class="w-full bg-blue-600 text-white py-5 rounded-2xl font-black uppercase shadow-lg">Gerar Lote</button>
-                                `}
-
-                                <button onclick="App.logic.cleanQueue('print_queue')" class="w-full bg-rose-600/20 text-rose-500 py-3 rounded-xl font-bold uppercase text-[10px] mt-4">Limpar Fila</button>
-                                <div class="flex flex-col gap-2 mt-2">
-                                    <button onclick="App.logic.copyLabelsZPL()" class="w-full bg-white text-black py-3 rounded-xl font-black uppercase text-[10px] shadow-lg hover:bg-slate-200 transition-all">Copiar ZPL (2 por Etiqueta)</button>
-                                    <button onclick="App.logic.copyLabelsZPL4Vertical()" class="w-full bg-slate-200 text-black py-3 rounded-xl font-black uppercase text-[10px] shadow-lg hover:bg-white transition-all">Copiar ZPL (4 Produtos)</button>
-                                </div>
-                            </div>
-                            <div class="lg:col-span-8 glass p-8"><div id="queue-box"></div><div id="queue-foot" class="mt-6"></div></div>
-                        </div>`;
                 },
 
                 showReposicaoER() {
@@ -406,7 +330,7 @@
                                 
                                 <div class="bg-white">
                                     <button id="copyReposicaoBtn" class="btn-copiar-er">
-                                        <i class="fa-regular fa-copy"></i> COPIAR LISTA (CÓDIGO | QUANTIDADE)
+                                        <i class="fa-regular fa-copy"></i> COPIAR LISTA (CÓDIGO QUANTIDADE)
                                     </button>
                                     
                                     <div id="reposicao-table-wrapper" class="overflow-x-auto">
@@ -606,7 +530,6 @@
                         return;
                     }
                     
-                    // ALTERADO: removido o "|" entre código e quantidade, agora apenas espaço
                     const text = App.state.reposicaoData.map(row => {
                         const keys = Object.keys(row);
                         const codKey = keys.find(k => /cód|cod|part/i.test(k));
@@ -633,8 +556,7 @@
 
                 syncQueues() {
                     if (App.state.activeListener) App.state.activeListener();
-                    const path = App.state.mode === 'labels' ? 'print_queue' : 'active_separation';
-                    App.state.activeListener = db.ref(path).on('value', (s) => this.renderQueueList(s.val()));
+                    App.state.activeListener = db.ref('active_separation').on('value', (s) => this.renderQueueList(s.val()));
                 },
 
                 renderQueueList(data) {
@@ -644,182 +566,23 @@
                     const items = Object.entries(data).map(([id, val]) => ({ id, ...val }));
                     items.sort((a,b) => String(a.rua + a.rck).localeCompare(String(b.rua + b.rck)));
 
-                    if (App.state.mode === 'picking') {
-                        box.innerHTML = items.map(i => `
-                            <div class="simple-list-item">
-                                <div>
-                                    <div class="simple-list-code">${i.codigo}</div>
-                                    <div class="text-[9px] text-slate-400 font-bold uppercase">${Utils.formatCoord(i.rua)}.${Utils.formatCoord(i.rck)}.${i.lin}/${i.col}</div>
-                                    <div class="text-[10px] text-slate-500 truncate w-40">${i.nome}</div>
-                                    <div class="text-[9px] text-slate-400">Físico: ${i.fisico || 0} | Disp: ${i.disponivel || 0}</div>
-                                </div>
-                                <div class="flex items-center gap-3">
-                                    <div class="simple-list-qty">${i.qtyItems ? 'Q:'+i.qtyItems : i.qty+'x'}</div>
-                                    <button onclick="App.logic.deleteItem('${i.id}')" class="text-rose-500 p-2"><i class="fa-solid fa-trash"></i></button>
-                                </div>
-                            </div>`).join('');
-                    } else {
-                        box.innerHTML = items.map(i => `
-                            <div class="simple-list-item">
-                                <div>
-                                    <div class="simple-list-code">${i.codigo}</div>
-                                    <div class="text-[9px] text-slate-400 font-bold uppercase">${Utils.formatCoord(i.rua)}.${Utils.formatCoord(i.rck)}.${i.lin}/${i.col}</div>
-                                    <div class="text-[10px] text-slate-500 truncate w-40">${i.nome}</div>
-                                </div>
-                                <div class="flex items-center gap-3">
-                                    <div class="simple-list-qty">${i.qtyItems ? 'Q:'+i.qtyItems : i.qty+'x'}</div>
-                                    <button onclick="App.logic.deleteItem('${i.id}')" class="text-rose-500 p-2"><i class="fa-solid fa-trash"></i></button>
-                                </div>
-                            </div>`).join('');
-                    }
+                    box.innerHTML = items.map(i => `
+                        <div class="simple-list-item">
+                            <div>
+                                <div class="simple-list-code">${i.codigo}</div>
+                                <div class="text-[9px] text-slate-400 font-bold uppercase">${Utils.formatCoord(i.rua)}.${Utils.formatCoord(i.rck)}.${i.lin}/${i.col}</div>
+                                <div class="text-[10px] text-slate-500 truncate w-40">${i.nome}</div>
+                                <div class="text-[9px] text-slate-400">Físico: ${i.fisico || 0} | Disp: ${i.disponivel || 0}</div>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <div class="simple-list-qty">${i.qty}</div>
+                                <button onclick="App.logic.deleteItem('${i.id}')" class="text-rose-500 p-2"><i class="fa-solid fa-trash"></i></button>
+                            </div>
+                        </div>`).join('');
                 }
             },
 
             logic: {
-                setLabelSubMode(mode) {
-                    App.state.labelSubMode = mode;
-                    App.ui.renderLabels();
-                    App.ui.syncQueues();
-                },
-
-                processLocate(code) {
-                    const search = Utils.cleanId(code);
-                    const p = App.state.inventory.find(i => Utils.cleanId(i.COD) === search);
-                    const res = document.getElementById('result-area');
-                    if (p && code.length >= 3) {
-                        res.innerHTML = `
-                            <div class="w-full space-y-6 animate-in zoom-in duration-300">
-                                <h2 class="text-xl font-black text-white uppercase">${p.NOM}</h2>
-                                <div class="loc-grid">
-                                    <div class="loc-card"><span class="loc-label">Rua</span><div class="loc-value">${Utils.formatCoord(p.RUA)}</div></div>
-                                    <div class="loc-card"><span class="loc-label">Rack</span><div class="loc-value">${Utils.formatCoord(p.RCK)}</div></div>
-                                    <div class="loc-card"><span class="loc-label">Nív</span><div class="loc-value">${p.LIN}</div></div>
-                                    <div class="loc-card"><span class="loc-label">Col</span><div class="loc-value">${p.COL}</div></div>
-                                </div>
-                                <div class="text-blue-500 font-black text-xs uppercase tracking-widest">Estoque: ${p.EST} UN</div>
-                            </div>`;
-                    } else if (code.length >= 3) {
-                        res.innerHTML = `<p class="text-rose-500 font-black text-xl">NÃO ENCONTRADO</p>`;
-                    }
-                },
-
-                lookupProduct(code) {
-                    const search = Utils.cleanId(code);
-                    const p = App.state.inventory.find(i => Utils.cleanId(i.COD) === search);
-                    const nameEl = document.getElementById('etq-name');
-                    if (nameEl) nameEl.innerText = p ? p.NOM : (code.length > 5 ? 'AVULSO' : '');
-                },
-
-                async addLabel() {
-                    const code = document.getElementById('etq-in')?.value;
-                    if (!code) {
-                        Notifications.show('Informe um código', 'info');
-                        return;
-                    }
-                    const p = App.state.inventory.find(i => Utils.cleanId(i.COD) === Utils.cleanId(code)) || { NOM: 'AVULSO' };
-                    const copies = parseInt(document.getElementById('etq-print-qty')?.value || 1);
-                    
-                    for(let i=0; i<copies; i++) {
-                        await db.ref('print_queue').push({
-                            codigo: code, nome: p.NOM,
-                            qty: 1, qtyItems: document.getElementById('etq-items-qty')?.value || '', 
-                            rua: Utils.formatCoord(p.RUA || '-'), rck: Utils.formatCoord(p.RCK || '-'),
-                            lin: p.LIN || '-', col: p.COL || '-'
-                        });
-                    }
-                    Notifications.show(`${copies} etiquetas adicionadas`, 'success');
-                    const etqIn = document.getElementById('etq-in');
-                    const etqName = document.getElementById('etq-name');
-                    if (etqIn) etqIn.value = '';
-                    if (etqName) etqName.innerText = '';
-                },
-
-                async addLabelBatch() {
-                    const text = document.getElementById('etq-batch')?.value;
-                    if (!text) return;
-                    const lines = text.split('\n').filter(l => l.trim());
-
-                    for (let line of lines) {
-                        const parts = line.trim().split(/\s+/);
-                        const code = parts[0];
-                        const copies = parseInt(parts[1]) || 1;
-                        const search = Utils.cleanId(code);
-                        const p = App.state.inventory.find(i => Utils.cleanId(i.COD) === search) || { NOM: 'AVULSO' };
-
-                        for(let i = 0; i < copies; i++) {
-                            await db.ref('print_queue').push({
-                                codigo: code,
-                                nome: p.NOM,
-                                qty: 1,
-                                qtyItems: '',
-                                rua: Utils.formatCoord(p.RUA || '-'),
-                                rck: Utils.formatCoord(p.RCK || '-'),
-                                lin: p.LIN || '-',
-                                col: p.COL || '-'
-                            });
-                        }
-                    }
-                    const etqBatch = document.getElementById('etq-batch');
-                    if (etqBatch) etqBatch.value = '';
-                    Notifications.show('Lote de etiquetas gerado', 'success');
-                },
-
-                async copyLabelsZPL() {
-                    db.ref('print_queue').once('value', (snap) => {
-                        if (!snap.exists()) return;
-                        const items = Object.values(snap.val());
-                        let zpl = "";
-                        for (let i = 0; i < items.length; i += 2) {
-                            zpl += "^XA^CI28^PW812^LL1218\n";
-                            [0, 600].forEach((yOffset) => {
-                                const it = items[i + (yOffset === 0 ? 0 : 1)]; 
-                                if (!it) return;
-                                const addr = `RUA: ${Utils.sanitizeText(it.rua)} RCK: ${Utils.sanitizeText(it.rck)}   ${it.lin}/${it.col}`;
-                                zpl += `^FO20,${yOffset + 20}^A0N,110,100^FD${Utils.cleanId(it.codigo)}^FS\n`;
-                                zpl += `^FO20,${yOffset + 150}^A0N,60,60^FB770,2,0,L,0^FD${Utils.sanitizeText(it.nome)}^FS\n`;
-                                zpl += `^FO20,${yOffset + 320}^A0N,45,45^FD${addr}^FS\n`;
-                                if (it.qtyItems) zpl += `^FO580,${yOffset + 320}^A0N,80,80^FDQ:${it.qtyItems}^FS\n`;
-                                zpl += `^BY3,3,180^FO60,${yOffset + 380}^BCN,180,Y,N,N^FD${it.codigo}^FS\n`;
-                            });
-                            zpl += "^XZ\n";
-                        }
-                        navigator.clipboard.writeText(zpl).then(() => Notifications.show('ZPL Copiado!', 'success'));
-                    });
-                },
-
-                async copyLabelsZPL4Vertical() {
-                    db.ref('print_queue').once('value', (snap) => {
-                        if (!snap.exists()) return;
-                        const items = Object.values(snap.val());
-                        let zpl = "";
-                        const yOffsets = [20, 300, 580, 860];
-
-                        for (let i = 0; i < items.length; i += 4) {
-                            zpl += "^XA^CI28^PW812^LL1218\n";
-                            
-                            yOffsets.forEach((y, idx) => {
-                                const it = items[i + idx];
-                                if (!it) return;
-
-                                const addr = `${Utils.sanitizeText(it.rua)}.${Utils.sanitizeText(it.rck)}.${it.lin}/${it.col}`;
-                                
-                                zpl += `^FO20,${y}^A0N,60,50^FD${Utils.cleanId(it.codigo)}^FS\n`;
-                                if (it.qtyItems) zpl += `^FO480,${y}^A0N,55,50^FDQ:${it.qtyItems}^FS\n`;
-                                
-                                zpl += `^FO20,${y + 65}^A0N,30,30^FB750,2,0,L,0^FD${Utils.sanitizeText(it.nome)}^FS\n`;
-                                zpl += `^FO20,${y + 130}^A0N,28,28^FD${addr}^FS\n`;
-                                
-                                zpl += `^BY2,3,80^FO60,${y + 170}^BCN,80,Y,N,N^FD${it.codigo}^FS\n`;
-                                
-                                zpl += `^FO10,${y + 275}^GB790,1,1^FS\n`;
-                            });
-
-                            zpl += "^XZ\n";
-                        }
-                        navigator.clipboard.writeText(zpl).then(() => Notifications.show('ZPL 4 produtos copiado!', 'success'));
-                    });
-                },
-
                 async addPicking() {
                     const pickText = document.getElementById('pick-text');
                     if (!pickText) return;
@@ -839,8 +602,7 @@
                 },
 
                 async deleteItem(id) {
-                    const path = App.state.mode === 'labels' ? 'print_queue' : 'active_separation';
-                    await db.ref(`${path}/${id}`).remove();
+                    await db.ref(`active_separation/${id}`).remove();
                 },
 
                 async cleanQueue(path) {
@@ -929,7 +691,7 @@
                 App.state.inventory = snap.exists() ? Object.values(snap.val()) : [];
                 App.ui.updateDash();
             });
-            App.ui.setMode('locate');
+            App.ui.setMode('picking');
         });
     </script>
 </body>
